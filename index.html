@@ -210,6 +210,28 @@
   .cam-actions{display:flex;gap:10px;}
   .cam-actions button{flex:1;}
 
+  .rules-list{
+    list-style:none;
+    padding:0;margin:0 0 20px;
+  }
+  .rules-list li{
+    position:relative;
+    padding:12px 0 12px 30px;
+    font-size:14.5px;
+    line-height:1.5;
+    color:var(--steel-900);
+    border-bottom:1px solid var(--steel-100);
+  }
+  .rules-list li:last-child{border-bottom:none;}
+  .rules-list li::before{
+    content:"";
+    position:absolute;
+    left:0;top:16px;
+    width:9px;height:9px;
+    background:var(--yellow-dark);
+    transform:rotate(45deg);
+  }
+
   /* ---- exam header (progress + timer) ---- */
   .exam-hud{
     display:flex;justify-content:space-between;align-items:center;
@@ -399,7 +421,22 @@
       <div class="err" id="err-photo" data-t="err_cam">Camera access is needed to continue. Please allow camera permission and try again.</div>
     </div>
 
-    <button class="primary" id="btn-to-exam" disabled data-t="btn_start_exam" onclick="goToExam()">Start exam</button>
+    <button class="primary" id="btn-to-exam" disabled data-t="btn_start_exam" onclick="show('step-rules')">Start exam</button>
+  </section>
+
+  <!-- STEP 2.5: RULES -->
+  <section id="step-rules" class="hidden">
+    <h1 class="step-title" data-t="rules_title">Before you begin</h1>
+    <div class="panel">
+      <ul class="rules-list">
+        <li data-t="rule_count">20 questions — each shows a photo of a tool. Pick the correct name from two options.</li>
+        <li data-t="rule_time">Try to finish within 1 minute. There's no cutoff — the clock keeps running and you can take longer — but the timer is there to show you're being timed.</li>
+        <li data-t="rule_order">Once you answer a question, you can't go back and change it.</li>
+        <li data-t="rule_score">Your score decides your category: 90% and above is Advanced, 80–89% Intermediate, 70–79% Basic, and below 70% is Not Qualified.</li>
+        <li data-t="rule_auto">Your result is recorded automatically the moment you finish — no need to show anyone or take a screenshot.</li>
+      </ul>
+      <button class="primary" data-t="btn_begin" onclick="goToExam()">Begin exam</button>
+    </div>
   </section>
 
   <!-- STEP 3: EXAM -->
@@ -477,6 +514,13 @@ const T = {
     cam_placeholder:'Tap "Open camera" below', btn_open_cam:"Open camera", btn_capture:"Capture", btn_retake:"Retake",
     err_cam:"Camera access is needed to continue. Please allow camera permission and try again.",
     btn_start_exam:"Start exam",
+    rules_title:"Before you begin",
+    rule_count:"20 questions — each shows a photo of a tool. Pick the correct name from two options.",
+    rule_time:"Try to finish within 1 minute. There's no cutoff — the clock keeps running and you can take longer — but the timer is there to show you're being timed.",
+    rule_order:"Once you answer a question, you can't go back and change it.",
+    rule_score:"Your score decides your category: 90% and above is Advanced, 80–89% Intermediate, 70–79% Basic, and below 70% is Not Qualified.",
+    rule_auto:"Your result is recorded automatically the moment you finish — no need to show anyone or take a screenshot.",
+    btn_begin:"Begin exam",
     q_label:"What is this tool?",
     submitting:"Saving your result…",
     result_title:"Exam complete", m_name:"Name", m_type:"Type", m_time:"Time taken",
@@ -494,6 +538,13 @@ const T = {
     cam_placeholder:'පහත "කැමරාව විවෘත කරන්න" ඔබන්න', btn_open_cam:"කැමරාව විවෘත කරන්න", btn_capture:"ගන්න", btn_retake:"නැවත ගන්න",
     err_cam:"දිගටම කරගෙන යාමට කැමරා ප්‍රවේශය අවශ්‍යයි. කරුණාකර කැමරා අවසරය ලබා දී නැවත උත්සාහ කරන්න.",
     btn_start_exam:"විභාගය අරඹන්න",
+    rules_title:"ආරම්භ කිරීමට පෙර",
+    rule_count:"ප්‍රශ්න 20ක් — එක් එක් ප්‍රශ්නයේ මෙවලමක ඡායාරූපයක් පෙන්වයි. විකල්ප දෙකෙන් නිවැරදි නම තෝරන්න.",
+    rule_time:"මිනිත්තුවක් තුළ අවසන් කිරීමට උත්සාහ කරන්න. නියමිත කාල සීමාවක් නැත — ඔබට වැඩි කාලයක් ගත කළ හැක — නමුත් ඔබ කාලය ගණන් කරනු ලබන බව පෙන්වීමට ටයිමරය ඇත.",
+    rule_order:"ප්‍රශ්නයකට පිළිතුරු දුන් පසු, එය නැවත වෙනස් කළ නොහැක.",
+    rule_score:"ඔබේ ලකුණු ඔබේ කාණ්ඩය තීරණය කරයි: 90% හෝ ඊට වැඩි නම් Advanced, 80–89% Intermediate, 70–79% Basic, 70%ට අඩු නම් Not Qualified.",
+    rule_auto:"ඔබ අවසන් කරන ක්ෂණයේම ඔබේ ප්‍රතිඵලය ස්වයංක්‍රීයව සටහන් වේ — කිසිවකුට පෙන්වීමට හෝ තිර රුවක් ගැනීමට අවශ්‍ය නැත.",
+    btn_begin:"විභාගය ආරම්භ කරන්න",
     q_label:"මෙම මෙවලම කුමක්ද?",
     submitting:"ඔබේ ප්‍රතිඵලය සුරකිමින්…",
     result_title:"විභාගය අවසන්", m_name:"නම", m_type:"වර්ගය", m_time:"ගත වූ කාලය",
@@ -757,7 +808,7 @@ function showResult(score, total, pct){
    NAV HELPER
    ========================================================= */
 function show(id){
-  ['step-register','step-photo','step-exam','step-submitting','step-result','step-error'].forEach(s=>{
+  ['step-register','step-photo','step-rules','step-exam','step-submitting','step-result','step-error'].forEach(s=>{
     document.getElementById(s).classList.toggle('hidden', s!==id);
   });
   document.getElementById('site-header').classList.toggle('compact', id!=='step-register');
