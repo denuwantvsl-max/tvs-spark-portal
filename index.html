@@ -68,6 +68,21 @@
     padding-top:10px;
   }
 
+  /* compact header — used on every step after registration so the
+     question/timer/photo controls get the screen, not branding */
+  header.top.compact{
+    padding:12px 18px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  header.top.compact .mark{font-size:19px;}
+  header.top.compact .sub,
+  header.top.compact .plant,
+  header.top.compact .lang-toggle{display:none;}
+  header.top.compact .brand{gap:0;}
+  header.top.compact .compact-tag{
+    font-size:12px;color:var(--steel-200);font-weight:600;
+  }
+
   h1.step-title{
     font-size:21px;
     font-weight:750;
@@ -317,7 +332,7 @@
 <body>
 
 <div class="band"></div>
-<header class="top">
+<header class="top" id="site-header">
   <div class="brand">
     <div class="mark">SPARK</div>
   </div>
@@ -327,6 +342,7 @@
     <button class="lang-btn active" id="lang-en" onclick="setLang('en')">English</button>
     <button class="lang-btn" id="lang-si" onclick="setLang('si')">සිංහල</button>
   </div>
+  <span class="compact-tag" id="compact-tag">Basic Entry Exam</span>
 </header>
 
 <div class="wrap">
@@ -726,6 +742,7 @@ function show(id){
   ['step-register','step-photo','step-exam','step-submitting','step-result','step-error'].forEach(s=>{
     document.getElementById(s).classList.toggle('hidden', s!==id);
   });
+  document.getElementById('site-header').classList.toggle('compact', id!=='step-register');
   window.scrollTo(0,0);
 }
 </script>
