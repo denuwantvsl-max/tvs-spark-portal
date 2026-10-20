@@ -1,0 +1,7 @@
+# Local-only files: never commit (repo is PUBLIC)
+CLAUDE.md
+.env
+.env.*
+.git-credentials
+*.token
+.claude/
