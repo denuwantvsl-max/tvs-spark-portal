@@ -1,10 +1,12 @@
 /**
  * SPARK — TVS Lanka Horana Skill Evaluation Portal
- * Backend for two pages:
+ * Backend for three pages:
  *  - index.html  (Basic Entry Exam): appends a row to the "Results" tab
  *    and saves the face photo to Drive.
  *  - assess.html (SKD Assembly Skill Assessment, assessor use): appends a
  *    row to "SKD Assessments" and updates the "SKD Skill Matrix" tab.
+ *  - matrix.html (Employee Skill Matrix, PIN-protected): reads everyone's
+ *    basic exam + SKD results.
  *
  * The web app is already deployed (Execute as: Me, Who has access: Anyone).
  * After ANY edit: Deploy > Manage deployments > pencil icon >
@@ -245,14 +247,18 @@ function columnToLetter(col) {
 }
 
 /* =====================================================================
- * SKD ASSEMBLY SKILL ASSESSMENT (assess.html)
+ * SKD ASSEMBLY SKILL ASSESSMENT (assess.html) + EMPLOYEE SKILL MATRIX (matrix.html)
  * Based on "SKD Assembly.xlsx" (Galhena): 19 key areas x 8 models.
  * Each area has 5 criteria marked Pass/Fail by the assessor. An area is
  * SKILLED (1) only if all 5 pass, otherwise 0, or N/A if it doesn't
  * apply to the model. Model % = skilled / applicable areas.
  * All-models % = average of the 8 model % (not-assessed models count 0),
  * the same as "Employee working knowledge % for all models" in the Excel.
- * Model and area order MUST match MODELS / AREAS in assess.html.
+ * Levels use the basic exam bands: 90+ Advanced, 80-89 Intermediate,
+ * 70-79 Basic, below 70 Not Qualified.
+ * Model and area order MUST match MODELS / AREAS in assess.html and matrix.html.
+ * Every SKD action needs the Script Property ASSESSOR_PIN.
+ * Actions: checkPin, lookup (one employee), submit, matrix (everyone).
  * ===================================================================== */
 const SKD_ASSESS_SHEET = 'SKD Assessments';
 const SKD_MATRIX_SHEET = 'SKD Skill Matrix';
@@ -278,13 +284,37 @@ const SKD_AREAS = [
   ['Identified Damage Parts & Shortages', ['Correct identification', 'Accurate quantity', 'Proper segregation', 'Timely reporting', 'Documentation']],
   ['Quality of Work', ['First-time-right', 'Workmanship', 'Defect prevention', 'Standard compliance', 'Final quality awareness']]
 ];
-// SKD Assessments columns: A..J fixed, then one column per area, then failed criteria.
-const SKD_FIRST_AREA_COL = 11; // column K
-// SKD Skill Matrix columns: A Name, B Type, C ID, then one column per model, then summary.
-const SKD_MATRIX_FIRST_MODEL_COL = 4; // column D
+// SKD Assessments: A Timestamp .. J Remarks, K..AC areas 1-19, AD Failed Criteria, AE Phone, AF Photo Link
+const SKD_FIRST_AREA_COL = 11;                                   // K
+const SKD_ASSESS_PHONE_COL = SKD_FIRST_AREA_COL + SKD_AREAS.length + 1; // AE (31)
+const SKD_ASSESS_PHOTO_COL = SKD_ASSESS_PHONE_COL + 1;            // AF (32)
+// SKD Skill Matrix: A Name, B Type, C ID, D..K models, L All %, M Models Assessed, N Last Assessed,
+// O Last Assessor, P Phone, Q Photo Link
+const SKD_MATRIX_FIRST_MODEL_COL = 4;                             // D
+const SKD_MATRIX_WIDTH = 3 + SKD_MODELS.length + 6;               // A..Q (17)
+const TZ = 'Asia/Colombo';
 
 function skdReply(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function normId(v) { return String(v || '').trim().toUpperCase(); }
+
+function fmtDate(d) {
+  return (d instanceof Date) ? Utilities.formatDate(d, TZ, 'dd MMM yyyy') : String(d || '');
+}
+
+// Drive file URL -> image URL a page can show (file must be shared "anyone with link").
+function photoThumb(url) {
+  const m = String(url || '').match(/\/d\/([a-zA-Z0-9_-]{20,})/) || String(url || '').match(/[?&]id=([a-zA-Z0-9_-]{20,})/);
+  return m ? 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w400' : '';
+}
+
+// Results tab stores "95%" (Sheets may turn it into 0.95).
+function pctNumber(v) {
+  if (typeof v === 'number') return v <= 1 ? Math.round(v * 100) : Math.round(v);
+  const n = parseFloat(String(v).replace('%', ''));
+  return isNaN(n) ? null : Math.round(n);
 }
 
 function handleSkd(data) {
@@ -296,13 +326,16 @@ function handleSkd(data) {
     return skdReply({ status: 'error', message: 'Wrong assessor PIN.' });
   }
   if (data.action === 'checkPin') return skdReply({ status: 'success' });
+  if (data.action === 'lookup') return skdLookup(normId(data.idNumber));
+  if (data.action === 'matrix') return skdReply({ status: 'success', employees: skdAllEmployees() });
   if (data.action !== 'submit') return skdReply({ status: 'error', message: 'Unknown action.' });
 
   // ---- validate ----
   const model = String(data.model || '');
   if (SKD_MODELS.indexOf(model) === -1) return skdReply({ status: 'error', message: 'Unknown model: ' + model });
-  const idNumber = String(data.idNumber || '').trim().toUpperCase();
+  const idNumber = normId(data.idNumber);
   const name = String(data.name || '').trim();
+  const phone = String(data.phone || '').trim();
   if (!idNumber || !name) return skdReply({ status: 'error', message: 'Employee name and ID are required.' });
   const areas = data.areas;
   if (!Array.isArray(areas) || areas.length !== SKD_AREAS.length) {
@@ -331,10 +364,36 @@ function handleSkd(data) {
   const empType = data.employeeType === 'company' ? 'Company' : 'Manpower';
   const now = new Date();
 
+  // ---- photo: best-effort, never blocks the result ----
+  let newPhotoUrl = '';
+  if (data.photoBase64) newPhotoUrl = skdSavePhoto(data.photoBase64, name, idNumber);
+
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
     const ss = SpreadsheetApp.openById(SHEET_ID);
+
+    // ---- 2. find this employee's matrix row (needed for the photo fallback) ----
+    const mSheet = skdMatrixSheet(ss);
+    const nModels = SKD_MODELS.length;
+    const last = mSheet.getLastRow();
+    let r = -1;
+    if (last >= 2) {
+      const ids = mSheet.getRange(2, 3, last - 1, 1).getValues();
+      for (let i = 0; i < ids.length; i++) {
+        if (normId(ids[i][0]) === idNumber) { r = i + 2; break; }
+      }
+    }
+    let mRow;
+    if (r === -1) { r = last + 1; mRow = new Array(SKD_MATRIX_WIDTH).fill(''); }
+    else { mRow = mSheet.getRange(r, 1, 1, SKD_MATRIX_WIDTH).getValues()[0]; }
+
+    // Photo for this employee: new one, else the one already on file, else the basic exam selfie.
+    let photoUrl = newPhotoUrl;
+    if (!photoUrl || photoUrl.indexOf('PHOTO_SAVE_FAILED') === 0) {
+      const kept = String(mRow[SKD_MATRIX_WIDTH - 1] || '');
+      photoUrl = kept || (skdBasicResult(ss, idNumber) || {}).photoUrl || newPhotoUrl || '';
+    }
 
     // ---- 1. full record of this assessment ----
     const aSheet = skdAssessSheet(ss);
@@ -342,27 +401,10 @@ function handleSkd(data) {
                  applicable, skilled, modelPct / 100, String(data.remarks || '')];
     row.push(...areaResults);
     row.push(failedText.join('\n'));
+    row.push(phone ? "'" + phone : '', newPhotoUrl);
     aSheet.appendRow(row);
 
     // ---- 2. latest result per employee x model ----
-    const mSheet = skdMatrixSheet(ss);
-    const nModels = SKD_MODELS.length;
-    const width = 3 + nModels + 4;
-    const last = mSheet.getLastRow();
-    let r = -1;
-    if (last >= 2) {
-      const ids = mSheet.getRange(2, 3, last - 1, 1).getValues();
-      for (let i = 0; i < ids.length; i++) {
-        if (String(ids[i][0]).trim().toUpperCase() === idNumber) { r = i + 2; break; }
-      }
-    }
-    let mRow;
-    if (r === -1) {
-      r = last + 1;
-      mRow = new Array(width).fill('');
-    } else {
-      mRow = mSheet.getRange(r, 1, 1, width).getValues()[0];
-    }
     mRow[0] = name;
     mRow[1] = empType;
     mRow[2] = idNumber;
@@ -380,25 +422,162 @@ function handleSkd(data) {
     mRow[3 + nModels + 1] = assessed;
     mRow[3 + nModels + 2] = now;
     mRow[3 + nModels + 3] = String(data.assessor || '');
-    mSheet.getRange(r, 1, 1, width).setValues([mRow]);
+    // Leading ' keeps the phone as text, so 07... doesn't lose its 0 when written back.
+    const keepPhone = (phone || String(mRow[3 + nModels + 4] || '')).replace(/^'+/, '');
+    mRow[3 + nModels + 4] = keepPhone ? "'" + keepPhone : '';
+    mRow[3 + nModels + 5] = photoUrl;
+    mSheet.getRange(r, 1, 1, SKD_MATRIX_WIDTH).setValues([mRow]);
 
     return skdReply({
       status: 'success', model: model, applicable: applicable, skilled: skilled,
-      modelPct: modelPct, allModelsPct: Math.round(allPct * 100), matrix: matrix
+      modelPct: modelPct, allModelsPct: Math.round(allPct * 100), matrix: matrix,
+      photo: photoThumb(photoUrl)
     });
   } finally {
     lock.releaseLock();
   }
 }
 
+function skdSavePhoto(photoBase64, name, idNumber) {
+  try {
+    const folder = DriveApp.getFolderById(PHOTOS_FOLDER_ID);
+    const safeName = String(name || 'employee').replace(/[^a-zA-Z0-9]/g, '_');
+    const fileName = 'SKD_' + safeName + '_' + idNumber + '_' + new Date().getTime() + '.jpg';
+    const bytes = Utilities.base64Decode(String(photoBase64).split(',').pop());
+    const file = folder.createFile(Utilities.newBlob(bytes, 'image/jpeg', fileName));
+    try {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch (shareErr) {
+      console.error('SKD photo sharing failed (non-fatal): ' + shareErr.toString());
+    }
+    return file.getUrl();
+  } catch (photoErr) {
+    console.error('SKD photo save failed (non-fatal): ' + photoErr.toString());
+    return 'PHOTO_SAVE_FAILED: ' + photoErr.toString();
+  }
+}
+
+// Latest basic exam (Results tab) row for this ID, or null.
+function skdBasicResult(ss, idNumber) {
+  const all = skdBasicResultsById(ss);
+  return all[idNumber] || null;
+}
+
+function skdBasicResultsById(ss) {
+  const out = {};
+  const sh = ss.getSheetByName(SHEET_NAME);
+  if (!sh || sh.getLastRow() < 2) return out;
+  const vals = sh.getRange(2, 1, sh.getLastRow() - 1, 11).getValues();
+  vals.forEach(v => {
+    const id = normId(v[4]);
+    if (!id || !String(v[1] || '').trim()) return;   // skip blank / junk rows
+    const photo = String(v[10] || '');
+    out[id] = {                                       // later rows overwrite = latest attempt wins
+      name: String(v[1]), phone: String(v[2] || ''),
+      empType: String(v[3] || '').toLowerCase() === 'company' ? 'Company' : 'Manpower',
+      score: v[5], total: v[6], pct: pctNumber(v[7]), category: String(v[8] || ''),
+      date: fmtDate(v[0]), photoUrl: photo.indexOf('PHOTO_SAVE_FAILED') === 0 ? '' : photo
+    };
+  });
+  return out;
+}
+
+function skdLookup(idNumber) {
+  if (!idNumber) return skdReply({ status: 'error', message: 'Enter the ID number first.' });
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const basic = skdBasicResult(ss, idNumber);
+
+  // Latest result + date per model, from the full assessment log.
+  const models = {};
+  const aSheet = ss.getSheetByName(SKD_ASSESS_SHEET);
+  if (aSheet && aSheet.getLastRow() >= 2) {
+    const vals = aSheet.getRange(2, 1, aSheet.getLastRow() - 1, 9).getValues();
+    vals.forEach(v => {
+      if (normId(v[4]) !== idNumber) return;
+      models[String(v[5])] = { pct: Math.round(Number(v[8]) * 100), date: fmtDate(v[0]) };
+    });
+  }
+
+  let emp = null, allPct = null;
+  const mSheet = ss.getSheetByName(SKD_MATRIX_SHEET);
+  if (mSheet && mSheet.getLastRow() >= 2) {
+    const rows = mSheet.getRange(2, 1, mSheet.getLastRow() - 1, SKD_MATRIX_WIDTH).getValues();
+    const m = rows.find(row => normId(row[2]) === idNumber);
+    if (m) {
+      emp = { name: String(m[0]), empType: String(m[1]), phone: String(m[SKD_MATRIX_WIDTH - 2] || ''), photoUrl: String(m[SKD_MATRIX_WIDTH - 1] || '') };
+      allPct = m[3 + SKD_MODELS.length] === '' ? null : Math.round(Number(m[3 + SKD_MODELS.length]) * 100);
+    }
+  }
+  if (!emp && basic) emp = { name: basic.name, empType: basic.empType, phone: basic.phone, photoUrl: basic.photoUrl };
+  if (emp && !emp.photoUrl && basic) emp.photoUrl = basic.photoUrl;
+  if (emp && !emp.phone && basic) emp.phone = basic.phone;
+
+  return skdReply({
+    status: 'success', found: !!emp,
+    employee: emp ? { name: emp.name, empType: emp.empType, phone: emp.phone, photo: photoThumb(emp.photoUrl) } : null,
+    models: models, allModelsPct: allPct,
+    basic: basic ? { pct: basic.pct, score: basic.score, total: basic.total, category: basic.category, date: basic.date } : null
+  });
+}
+
+// Everyone who has a basic exam result and/or an SKD assessment.
+function skdAllEmployees() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const basicById = skdBasicResultsById(ss);
+  const byId = {};
+  const mSheet = ss.getSheetByName(SKD_MATRIX_SHEET);
+  if (mSheet && mSheet.getLastRow() >= 2) {
+    mSheet.getRange(2, 1, mSheet.getLastRow() - 1, SKD_MATRIX_WIDTH).getValues().forEach(m => {
+      const id = normId(m[2]);
+      if (!id) return;
+      const models = {};
+      SKD_MODELS.forEach((name, k) => {
+        const v = m[SKD_MATRIX_FIRST_MODEL_COL - 1 + k];
+        models[name] = (v === '' || v === null) ? null : Math.round(Number(v) * 100);
+      });
+      const allV = m[3 + SKD_MODELS.length];
+      byId[id] = {
+        id: id, name: String(m[0]), empType: String(m[1]),
+        phone: String(m[SKD_MATRIX_WIDTH - 2] || ''), photoUrl: String(m[SKD_MATRIX_WIDTH - 1] || ''),
+        models: models, allPct: allV === '' ? null : Math.round(Number(allV) * 100),
+        modelsAssessed: Number(m[3 + SKD_MODELS.length + 1]) || 0,
+        lastAssessed: fmtDate(m[3 + SKD_MODELS.length + 2])
+      };
+    });
+  }
+  Object.keys(basicById).forEach(id => {
+    const b = basicById[id];
+    if (!byId[id]) {
+      byId[id] = { id: id, name: b.name, empType: b.empType, phone: b.phone, photoUrl: b.photoUrl,
+                   models: {}, allPct: null, modelsAssessed: 0, lastAssessed: '' };
+    }
+    const e = byId[id];
+    if (!e.photoUrl) e.photoUrl = b.photoUrl;
+    if (!e.phone) e.phone = b.phone;
+    e.basic = { pct: b.pct, score: b.score, total: b.total, category: b.category, date: b.date };
+  });
+  return Object.keys(byId).map(id => {
+    const e = byId[id];
+    return { id: e.id, name: e.name, empType: e.empType, phone: e.phone, photo: photoThumb(e.photoUrl),
+             models: e.models, allPct: e.allPct, modelsAssessed: e.modelsAssessed,
+             lastAssessed: e.lastAssessed, basic: e.basic || null };
+  });
+}
+
+// Writes any missing header cells (used when new columns are added to an existing tab).
+function skdEnsureHeaders(sh, headers) {
+  const cur = sh.getRange(1, 1, 1, headers.length).getValues()[0];
+  headers.forEach((h, i) => { if (cur[i] === '' || cur[i] === null) sh.getRange(1, i + 1).setValue(h).setFontWeight('bold').setWrap(true); });
+}
+
 function skdAssessSheet(ss) {
-  let sh = ss.getSheetByName(SKD_ASSESS_SHEET);
-  if (sh && sh.getLastRow() > 0) return sh;
-  if (!sh) sh = ss.insertSheet(SKD_ASSESS_SHEET);
   const headers = ['Timestamp', 'Assessor', 'Employee Name', 'Employee Type', 'ID Number', 'Model',
                    'Applicable Areas', 'Skilled Areas', 'Model Skill %', 'Remarks'];
   SKD_AREAS.forEach((a, i) => headers.push((i + 1) + '. ' + a[0]));
-  headers.push('Failed Criteria');
+  headers.push('Failed Criteria', 'Phone', 'Photo Link');
+  let sh = ss.getSheetByName(SKD_ASSESS_SHEET);
+  if (sh && sh.getLastRow() > 0) { skdEnsureHeaders(sh, headers); return sh; }
+  if (!sh) sh = ss.insertSheet(SKD_ASSESS_SHEET);
   sh.appendRow(headers);
   sh.setFrozenRows(1);
   sh.getRange(1, 1, 1, headers.length).setFontWeight('bold').setWrap(true);
@@ -414,11 +593,11 @@ function skdAssessSheet(ss) {
 }
 
 function skdMatrixSheet(ss) {
-  let sh = ss.getSheetByName(SKD_MATRIX_SHEET);
-  if (sh && sh.getLastRow() > 0) return sh;
-  if (!sh) sh = ss.insertSheet(SKD_MATRIX_SHEET);
   const headers = ['Employee Name', 'Employee Type', 'ID Number'].concat(SKD_MODELS)
-    .concat(['All Models %', 'Models Assessed', 'Last Assessed', 'Last Assessor']);
+    .concat(['All Models %', 'Models Assessed', 'Last Assessed', 'Last Assessor', 'Phone', 'Photo Link']);
+  let sh = ss.getSheetByName(SKD_MATRIX_SHEET);
+  if (sh && sh.getLastRow() > 0) { skdEnsureHeaders(sh, headers); return sh; }
+  if (!sh) sh = ss.insertSheet(SKD_MATRIX_SHEET);
   sh.appendRow(headers);
   sh.setFrozenRows(1);
   sh.getRange(1, 1, 1, headers.length).setFontWeight('bold').setWrap(true);

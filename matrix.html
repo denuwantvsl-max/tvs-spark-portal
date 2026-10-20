@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TVS Lanka Horana — SPARK Employee Skill Matrix</title>
+<style>
+  :root{
+    --steel-900:#1c2126;
+    --steel-700:#333c44;
+    --steel-500:#5b6670;
+    --steel-200:#c9d0d5;
+    --steel-100:#eef1f2;
+    --paper:#f6f5f1;
+    --yellow:#f2b705;
+    --yellow-dark:#c99000;
+    --red:#c1272d;
+    --green:#2e7d32;
+    --blue:#1565c0;
+    --focus:#0d6efd;
+    /* heat map cells: same 4 levels as the exams */
+    --h-adv-bg:#2e7d32;  --h-adv-fg:#fff;
+    --h-int-bg:#8cc68f;  --h-int-fg:#10361a;
+    --h-bas-bg:#f6d36b;  --h-bas-fg:#4a3500;
+    --h-nq-bg:#e9898d;   --h-nq-fg:#4d0a0d;
+    --h-none-bg:#eef1f2; --h-none-fg:#9aa3aa;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;background:var(--paper);color:var(--steel-900);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans Sinhala","Iskoola Pota",sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:1240px;margin:0 auto;padding:0 16px 40px;}
+  .narrow{max-width:440px;margin:0 auto;}
+
+  .band{background-image:repeating-linear-gradient(135deg, var(--yellow) 0 14px, var(--steel-900) 14px 28px);height:6px;}
+  header.top{background:var(--steel-900);color:var(--paper);padding:16px;}
+  .top-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;max-width:1240px;margin:0 auto;}
+  .mark{font-weight:800;font-size:24px;letter-spacing:0.5px;color:var(--yellow);}
+  .sub{font-size:12.5px;color:var(--steel-200);margin-top:2px;}
+  .sub a{color:var(--yellow);}
+  .lang-toggle{display:flex;gap:6px;}
+  .lang-btn{
+    padding:8px 14px;font-size:13px;font-weight:650;font-family:inherit;border:1px solid var(--steel-700);border-radius:3px;
+    background:transparent;color:var(--steel-200);cursor:pointer;
+  }
+  .lang-btn.active{background:var(--yellow);color:var(--steel-900);border-color:var(--yellow);}
+
+  h1{font-size:21px;font-weight:750;margin:22px 0 4px;}
+  p.desc{font-size:14px;color:var(--steel-500);line-height:1.5;margin:0 0 16px;}
+
+  .panel{background:#fff;border:1px solid var(--steel-200);border-radius:4px;padding:16px;margin-bottom:16px;}
+  label{display:block;font-size:13px;font-weight:650;color:var(--steel-700);margin:0 0 6px;}
+  input[type=password], input[type=search], select{
+    width:100%;padding:12px;font-size:16px;font-family:inherit;border:1.5px solid var(--steel-200);border-radius:3px;
+    background:var(--steel-100);color:var(--steel-900);
+  }
+  input:focus, select:focus{outline:2px solid var(--focus);outline-offset:1px;background:#fff;}
+  button.primary{
+    width:100%;padding:15px;margin-top:14px;font-size:16px;font-weight:700;font-family:inherit;
+    color:var(--steel-900);background:var(--yellow);border:none;border-radius:3px;cursor:pointer;
+  }
+  button.primary:disabled{background:var(--steel-200);color:var(--steel-500);}
+  .err{color:var(--red);font-size:13.5px;font-weight:600;margin-top:12px;display:none;}
+  .err.show{display:block;}
+
+  /* ---- summary tiles ---- */
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:6px 0 16px;}
+  .tile{background:#fff;border:1px solid var(--steel-200);border-radius:4px;padding:12px 14px;}
+  .tile .v{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;}
+  .tile .k{font-size:12px;color:var(--steel-500);font-weight:650;margin-top:2px;}
+
+  /* ---- controls ---- */
+  .controls{display:grid;grid-template-columns:2fr 1fr auto;gap:10px;align-items:end;margin-bottom:12px;}
+  .controls button{
+    padding:12px 16px;font-size:14px;font-weight:700;font-family:inherit;border-radius:3px;cursor:pointer;
+    background:var(--steel-900);color:var(--yellow);border:none;white-space:nowrap;
+  }
+  .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--steel-700);margin-bottom:12px;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .legend i{width:16px;height:12px;border-radius:2px;display:inline-block;}
+
+  /* ---- heat map table ---- */
+  .table-wrap{overflow-x:auto;background:#fff;border:1px solid var(--steel-200);border-radius:4px;-webkit-overflow-scrolling:touch;}
+  table{border-collapse:separate;border-spacing:0;width:100%;min-width:980px;font-size:13.5px;}
+  thead th{
+    position:sticky;top:0;background:var(--steel-900);color:var(--paper);font-weight:700;font-size:12px;
+    padding:10px 6px;text-align:center;white-space:nowrap;z-index:2;
+  }
+  thead th.sortable{cursor:pointer;}
+  thead th.sorted{color:var(--yellow);}
+  th.emp-h, td.emp{position:sticky;left:0;z-index:1;text-align:left;}
+  thead th.emp-h{z-index:3;padding-left:12px;}
+  td{border-bottom:1px solid var(--steel-100);padding:6px;text-align:center;}
+  td.emp{background:#fff;padding:8px 10px 8px 12px;min-width:220px;max-width:260px;border-right:1px solid var(--steel-200);}
+  .emp-cell{display:flex;align-items:center;gap:10px;}
+  .avatar{
+    width:44px;height:44px;border-radius:50%;flex:0 0 44px;object-fit:cover;background:var(--steel-200);
+    display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--steel-700);font-size:15px;
+  }
+  .emp-name{font-weight:700;line-height:1.25;overflow:hidden;text-overflow:ellipsis;}
+  .emp-meta{font-size:11.5px;color:var(--steel-500);margin-top:2px;}
+  .rank{font-size:11.5px;font-weight:800;color:var(--steel-500);min-width:18px;}
+  .cell{
+    display:block;min-width:58px;padding:9px 4px;border-radius:3px;font-weight:750;font-variant-numeric:tabular-nums;
+  }
+  .cell small{display:block;font-size:10.5px;font-weight:650;opacity:0.85;margin-top:1px;}
+  .c-adv{background:var(--h-adv-bg);color:var(--h-adv-fg);}
+  .c-int{background:var(--h-int-bg);color:var(--h-int-fg);}
+  .c-bas{background:var(--h-bas-bg);color:var(--h-bas-fg);}
+  .c-nq {background:var(--h-nq-bg);color:var(--h-nq-fg);}
+  .c-none{background:var(--h-none-bg);color:var(--h-none-fg);font-weight:600;}
+  td.sep{border-left:2px solid var(--steel-200);}
+  td.all .cell{min-width:72px;font-size:15px;}
+  .muted{color:var(--steel-500);font-size:13px;}
+  .hidden{display:none !important;}
+  .spinner{width:34px;height:34px;border-radius:50%;border:4px solid var(--steel-200);border-top-color:var(--yellow-dark);margin:30px auto;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  footer.foot{text-align:center;font-size:11.5px;color:var(--steel-500);padding:22px 16px 8px;}
+
+  @media (max-width:700px){
+    .tiles{grid-template-columns:1fr 1fr;}
+    .controls{grid-template-columns:1fr 1fr;}
+    .controls .search{grid-column:1 / -1;}
+    td.emp{min-width:170px;max-width:190px;}
+    .avatar{width:36px;height:36px;flex-basis:36px;font-size:13px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="band"></div>
+<header class="top">
+  <div class="top-row">
+    <div>
+      <div class="mark">SPARK</div>
+      <div class="sub"><span data-t="sub">Employee Skill Matrix — TVS Lanka Horana Assembly Plant</span> · <a href="assess.html" data-t="link_assess">New SKD assessment</a></div>
+    </div>
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="lang-en" onclick="setLang('en')">English</button>
+      <button class="lang-btn" id="lang-si" onclick="setLang('si')">සිංහල</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- PIN GATE -->
+  <section id="step-pin" class="narrow">
+    <h1 data-t="pin_title">Employee skill matrix</h1>
+    <p class="desc" data-t="pin_desc">Contains employee photos and results. Enter the assessor PIN to view.</p>
+    <div class="panel">
+      <label for="in-pin" data-t="lbl_pin">Assessor PIN</label>
+      <input type="password" id="in-pin" inputmode="numeric" autocomplete="off" onkeydown="if(event.key==='Enter')loadMatrix()">
+      <button class="primary" id="btn-load" onclick="loadMatrix()" data-t="btn_view">View matrix</button>
+      <div class="err" id="err-pin"></div>
+    </div>
+  </section>
+
+  <section id="step-loading" class="hidden"><div class="spinner"></div></section>
+
+  <!-- MATRIX -->
+  <section id="step-matrix" class="hidden">
+    <h1 data-t="pin_title">Employee skill matrix</h1>
+    <p class="desc" data-t="mx_desc">Basic entry exam and SKD assembly skill per model. Highest overall skill first. Not-assessed models count as 0 in "All models", as in the SKD Excel.</p>
+
+    <div class="tiles">
+      <div class="tile"><div class="v" id="k-emps">0</div><div class="k" data-t="k_emps">Employees</div></div>
+      <div class="tile"><div class="v" id="k-skd">0</div><div class="k" data-t="k_skd">SKD assessed</div></div>
+      <div class="tile"><div class="v" id="k-basic">–</div><div class="k" data-t="k_basic">Avg basic exam</div></div>
+      <div class="tile"><div class="v" id="k-all">–</div><div class="k" data-t="k_all">Avg all-models skill</div></div>
+    </div>
+
+    <div class="controls">
+      <div class="search">
+        <label for="in-search" data-t="lbl_search">Search name or ID</label>
+        <input type="search" id="in-search" oninput="render()">
+      </div>
+      <div>
+        <label for="in-sort" data-t="lbl_sort">Sort by</label>
+        <select id="in-sort" onchange="sortKey=this.value;render()"></select>
+      </div>
+      <button onclick="loadMatrix()" data-t="btn_refresh">Refresh</button>
+    </div>
+
+    <div class="legend" id="legend"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr id="thead-row"></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p class="muted" id="empty" style="margin-top:12px"></p>
+  </section>
+</div>
+
+<footer class="foot">TVS Lanka (Pvt.) Ltd. — Horana Assembly Plant</footer>
+
+<script>
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmb3QSN2dRrjoH0iEmVlgWVJEktyD9hzyTq7eZTI6QuU1g1nf3E63o2zDR9M5lDw2glA/exec";
+// Must match SKD_MODELS in backend/SPARK_Code.gs and MODELS in assess.html.
+const MODELS = ['Sport 110','Ntorq 125','Ronin 225','RTR','iQube','Orbiter','Jupiter','Raider 125'];
+
+const T = {
+  en: {
+    sub:'Employee Skill Matrix — TVS Lanka Horana Assembly Plant', link_assess:'New SKD assessment',
+    pin_title:'Employee skill matrix', pin_desc:'Contains employee photos and results. Enter the assessor PIN to view.',
+    lbl_pin:'Assessor PIN', btn_view:'View matrix', err_pin:'Enter the assessor PIN.',
+    mx_desc:'Basic entry exam and SKD assembly skill per model. Highest overall skill first. Not-assessed models count as 0 in "All models", as in the SKD Excel.',
+    k_emps:'Employees', k_skd:'SKD assessed', k_basic:'Avg basic exam', k_all:'Avg all-models skill',
+    lbl_search:'Search name or ID', lbl_sort:'Sort by', btn_refresh:'Refresh',
+    s_all:'All-models skill', s_basic:'Basic exam', s_name:'Name', s_recent:'Last assessed',
+    h_emp:'Employee', h_basic:'Basic exam', h_all:'All models', h_level:'Level',
+    lv_adv:'Advanced', lv_int:'Intermediate', lv_bas:'Basic', lv_nq:'Not Qualified', not_done:'Not assessed',
+    none_found:'No employees match.', no_data:'No results yet.', last:'Last'
+  },
+  si: {
+    sub:'සේවක කුසලතා සටහන — TVS Lanka හොරණ එකලස් කිරීමේ පිරියත', link_assess:'නව SKD ඇගයීමක්',
+    pin_title:'සේවක කුසලතා සටහන', pin_desc:'සේවක ඡායාරූප සහ ප්‍රතිඵල අඩංගුයි. බැලීමට ඇගයීම්කරු PIN අංකය ඇතුළත් කරන්න.',
+    lbl_pin:'ඇගයීම්කරු PIN අංකය', btn_view:'සටහන බලන්න', err_pin:'ඇගයීම්කරු PIN අංකය ඇතුළත් කරන්න.',
+    mx_desc:'මූලික ප්‍රවේශ විභාගය සහ එක් එක් මාදිලිය සඳහා SKD එකලස් කිරීමේ කුසලතාව. වැඩිම සමස්ත කුසලතාව ඇති අය මුලින්. SKD Excel හි මෙන්, ඇගයීම නොකළ මාදිලි "සියලු මාදිලි" හි 0 ලෙස ගැනේ.',
+    k_emps:'සේවකයින්', k_skd:'SKD ඇගයූ', k_basic:'මූලික විභාග සාමාන්‍යය', k_all:'සියලු මාදිලි සාමාන්‍යය',
+    lbl_search:'නම හෝ අංකය සොයන්න', lbl_sort:'අනුපිළිවෙල', btn_refresh:'යාවත්කාලීන කරන්න',
+    s_all:'සියලු මාදිලි කුසලතාව', s_basic:'මූලික විභාගය', s_name:'නම', s_recent:'අවසන් ඇගයීම',
+    h_emp:'සේවකයා', h_basic:'මූලික විභාගය', h_all:'සියලු මාදිලි', h_level:'මට්ටම',
+    lv_adv:'උසස්', lv_int:'මධ්‍යම', lv_bas:'මූලික', lv_nq:'සුදුසුකම් නොලැබූ', not_done:'ඇගයීම කර නැත',
+    none_found:'ගැළපෙන සේවකයින් නැත.', no_data:'තවම ප්‍රතිඵල නැත.', last:'අවසන්'
+  }
+};
+let lang = 'en';
+function t(k){ return (T[lang][k] !== undefined ? T[lang][k] : T.en[k]) || k; }
+function setLang(l){
+  lang = l;
+  document.documentElement.lang = l==='si' ? 'si' : 'en';
+  document.getElementById('lang-en').classList.toggle('active', l==='en');
+  document.getElementById('lang-si').classList.toggle('active', l==='si');
+  document.querySelectorAll('[data-t]').forEach(el=>{ el.textContent = t(el.getAttribute('data-t')); });
+  renderSortOptions();
+  renderLegend();
+  if(employees) render();
+  try{ localStorage.setItem('spark_lang', l); }catch(_){}
+}
+
+function levelKey(p){ return p>=90 ? 'adv' : p>=80 ? 'int' : p>=70 ? 'bas' : 'nq'; }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function initials(n){ return String(n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase() || '?'; }
+
+let employees = null;
+let sortKey = 'all';
+let pin = '';
+
+function renderSortOptions(){
+  const sel = document.getElementById('in-sort');
+  sel.innerHTML = ['all','basic','name','recent'].map(k=>`<option value="${k}"${k===sortKey?' selected':''}>${esc(t('s_'+k))}</option>`).join('');
+}
+function renderLegend(){
+  document.getElementById('legend').innerHTML =
+    [['adv','90%+'],['int','80–89%'],['bas','70–79%'],['nq','< 70%']].map(([k,r])=>`<span><i class="c-${k}"></i>${esc(t('lv_'+k))} ${r}</span>`).join('') +
+    `<span><i class="c-none" style="border:1px solid var(--steel-200)"></i>${esc(t('not_done'))}</span>`;
+}
+
+function show(id){
+  ['step-pin','step-loading','step-matrix'].forEach(s=>document.getElementById(s).classList.toggle('hidden', s!==id));
+}
+
+async function loadMatrix(){
+  const errEl = document.getElementById('err-pin');
+  const typed = document.getElementById('in-pin').value.trim();
+  if(typed) pin = typed;
+  if(!pin){ errEl.textContent = t('err_pin'); errEl.classList.add('show'); return; }
+  errEl.classList.remove('show');
+  show('step-loading');
+  try{
+    const resp = await fetch(APPS_SCRIPT_URL, {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ formType:'skd', action:'matrix', pin:pin })
+    });
+    const text = await resp.text();
+    let d = null; try{ d = JSON.parse(text); }catch(_){}
+    if(!resp.ok || !d || d.status!=='success') throw new Error((d && d.message) || 'The server did not confirm.');
+    employees = d.employees || [];
+    document.getElementById('in-pin').value = '';
+    show('step-matrix');
+    render();
+  }catch(e){
+    console.error('SPARK matrix load failed:', e);
+    pin = '';
+    errEl.textContent = e.message && e.message !== 'Failed to fetch' ? e.message : 'No connection to the server. Try again.';
+    errEl.classList.add('show');
+    show('step-pin');
+  }
+}
+
+function cell(p, sub){
+  if(p===null || p===undefined || p==='') return `<span class="cell c-none">–</span>`;
+  return `<span class="cell c-${levelKey(p)}">${p}%${sub ? `<small>${esc(sub)}</small>` : ''}</span>`;
+}
+
+function dateValue(s){ const d = Date.parse(s); return isNaN(d) ? 0 : d; }
+
+function render(){
+  const q = document.getElementById('in-search').value.trim().toLowerCase();
+  let list = employees.filter(e => !q || String(e.name).toLowerCase().includes(q) || String(e.id).toLowerCase().includes(q));
+  const num = v => (v===null || v===undefined) ? -1 : v;
+  list.sort((a,b)=>{
+    if(sortKey==='name') return String(a.name).localeCompare(String(b.name));
+    if(sortKey==='basic') return num(b.basic && b.basic.pct) - num(a.basic && a.basic.pct) || num(b.allPct) - num(a.allPct);
+    if(sortKey==='recent') return dateValue(b.lastAssessed) - dateValue(a.lastAssessed);
+    return num(b.allPct) - num(a.allPct) || num(b.basic && b.basic.pct) - num(a.basic && a.basic.pct);
+  });
+
+  // header
+  const sorted = k => sortKey===k ? ' sorted' : '';
+  document.getElementById('thead-row').innerHTML =
+    `<th class="emp-h sortable${sorted('name')}" onclick="setSort('name')">${esc(t('h_emp'))}</th>`+
+    `<th class="sortable${sorted('basic')}" onclick="setSort('basic')">${esc(t('h_basic'))}</th>`+
+    MODELS.map(m=>`<th>${esc(m)}</th>`).join('')+
+    `<th class="sortable${sorted('all')}" onclick="setSort('all')">${esc(t('h_all'))}</th>`+
+    `<th>${esc(t('h_level'))}</th>`;
+
+  document.getElementById('tbody').innerHTML = list.map((e, i)=>{
+    const photo = e.photo
+      ? `<img class="avatar" src="${esc(e.photo)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'avatar',textContent:this.dataset.i}))" data-i="${esc(initials(e.name))}">`
+      : `<div class="avatar">${esc(initials(e.name))}</div>`;
+    const meta = [e.id, e.empType].filter(Boolean).join(' · ') + (e.lastAssessed ? ` · ${t('last')} ${e.lastAssessed}` : '');
+    const b = e.basic;
+    const lvl = (e.allPct===null || e.allPct===undefined) ? '<span class="muted">–</span>' : esc(t('lv_'+levelKey(e.allPct)));
+    return `<tr>`+
+      `<td class="emp"><div class="emp-cell"><span class="rank">${sortKey==='name' ? '' : i+1}</span>${photo}`+
+        `<div style="min-width:0"><div class="emp-name">${esc(e.name)}</div><div class="emp-meta">${esc(meta)}</div></div></div></td>`+
+      `<td>${b ? cell(b.pct, b.category) : cell(null)}</td>`+
+      MODELS.map((m, k)=>`<td${k===0?' class="sep"':''}>${cell(e.models ? e.models[m] : null)}</td>`).join('')+
+      `<td class="sep all">${cell(e.allPct)}</td>`+
+      `<td style="font-weight:700;font-size:12.5px;white-space:nowrap">${lvl}</td>`+
+    `</tr>`;
+  }).join('');
+
+  document.getElementById('empty').textContent = !employees.length ? t('no_data') : (!list.length ? t('none_found') : '');
+
+  // summary tiles (all employees, not just the filtered list)
+  const basics = employees.map(e=>e.basic && e.basic.pct).filter(v=>typeof v==='number');
+  const alls = employees.map(e=>e.allPct).filter(v=>typeof v==='number');
+  const avg = a => a.length ? Math.round(a.reduce((x,y)=>x+y,0)/a.length)+'%' : '–';
+  document.getElementById('k-emps').textContent = employees.length;
+  document.getElementById('k-skd').textContent = alls.length;
+  document.getElementById('k-basic').textContent = avg(basics);
+  document.getElementById('k-all').textContent = avg(alls);
+}
+
+function setSort(k){ sortKey = k; renderSortOptions(); render(); }
+
+let savedLang = 'en';
+try{ savedLang = localStorage.getItem('spark_lang') || 'en'; }catch(_){}
+setLang(savedLang === 'si' ? 'si' : 'en');
+</script>
+</body>
+</html>

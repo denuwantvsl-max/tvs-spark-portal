@@ -15,9 +15,9 @@
     --yellow:#f2b705;
     --yellow-dark:#c99000;
     --red:#c1272d;
-    --red-bg:#fbe9ea;
     --green:#2e7d32;
-    --green-bg:#e8f3e9;
+    --blue:#1565c0;
+    --whatsapp:#1f8f4e;
     --focus:#0d6efd;
   }
   *{box-sizing:border-box;}
@@ -25,7 +25,7 @@
     margin:0;padding:0;
     background:var(--paper);
     color:var(--steel-900);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans Sinhala","Iskoola Pota",sans-serif;
     -webkit-text-size-adjust:100%;
   }
   body{
@@ -47,11 +47,19 @@
     font-size:12.5px;color:var(--steel-200);margin-top:10px;
     border-top:1px solid var(--steel-700);padding-top:10px;
   }
+  header.top .plant a{color:var(--yellow);}
   header.top .compact-tag{display:none;}
   header.top.compact{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;}
   header.top.compact .mark{font-size:19px;}
-  header.top.compact .sub, header.top.compact .plant{display:none;}
+  header.top.compact .sub, header.top.compact .plant, header.top.compact .lang-toggle{display:none;}
   header.top.compact .compact-tag{display:block;font-size:12px;color:var(--steel-200);font-weight:600;}
+  .lang-toggle{display:flex;gap:8px;margin-top:14px;}
+  .lang-btn{
+    flex:1;padding:9px;font-size:13px;font-weight:650;font-family:inherit;
+    border:1px solid var(--steel-700);border-radius:3px;
+    background:transparent;color:var(--steel-200);cursor:pointer;
+  }
+  .lang-btn.active{background:var(--yellow);color:var(--steel-900);border-color:var(--yellow);}
 
   h1.step-title{font-size:21px;font-weight:750;margin:24px 0 4px;}
   p.step-desc{font-size:14.5px;color:var(--steel-500);line-height:1.5;margin:0 0 18px;}
@@ -63,7 +71,7 @@
   .panel h2{font-size:14px;font-weight:750;margin:0 0 12px;color:var(--steel-700);text-transform:uppercase;letter-spacing:0.4px;}
 
   label{display:block;font-size:13px;font-weight:650;color:var(--steel-700);margin:0 0 6px;}
-  input[type=text], input[type=password], textarea{
+  input[type=text], input[type=password], input[type=tel], textarea{
     width:100%;padding:13px 12px;font-size:16px;
     border:1.5px solid var(--steel-200);border-radius:3px;
     background:var(--steel-100);color:var(--steel-900);
@@ -71,6 +79,28 @@
   }
   textarea{min-height:84px;resize:vertical;}
   input:focus, textarea:focus{outline:2px solid var(--focus);outline-offset:1px;background:#fff;}
+
+  .id-row{display:flex;gap:8px;margin-bottom:16px;}
+  .id-row input{margin-bottom:0;flex:1;min-width:0;}
+  .id-row button{
+    flex:0 0 auto;padding:0 18px;font-size:15px;font-weight:700;font-family:inherit;
+    background:var(--steel-900);color:var(--yellow);border:none;border-radius:3px;cursor:pointer;
+  }
+  .id-row button:disabled{opacity:0.6;cursor:wait;}
+
+  .found-box{
+    display:flex;gap:12px;align-items:center;
+    background:#fff8e1;border:1px solid var(--yellow-dark);border-radius:4px;
+    padding:12px;margin:-4px 0 16px;font-size:13.5px;line-height:1.45;
+  }
+  .found-box.new{background:var(--steel-100);border-color:var(--steel-200);}
+  .found-box b{font-size:14.5px;}
+
+  .avatar{
+    width:56px;height:56px;border-radius:50%;flex:0 0 56px;object-fit:cover;
+    background:var(--steel-200);display:flex;align-items:center;justify-content:center;
+    font-weight:800;color:var(--steel-700);font-size:18px;overflow:hidden;
+  }
 
   .radio-row{display:flex;gap:10px;margin-bottom:16px;}
   .radio-opt{
@@ -80,23 +110,56 @@
   }
   .radio-opt.active{border-color:var(--yellow-dark);background:#fff8e1;color:var(--steel-900);}
 
+  /* ---- camera ---- */
+  .cam-frame{
+    width:200px;height:200px;margin:4px auto 14px;border-radius:50%;overflow:hidden;
+    background:var(--steel-900);border:4px solid var(--yellow);position:relative;
+  }
+  .cam-frame video, .cam-frame img{width:100%;height:100%;object-fit:cover;display:block;}
+  .cam-frame .placeholder{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    color:var(--steel-200);font-size:12.5px;text-align:center;padding:24px;
+  }
+  .cam-note{font-size:12.5px;color:var(--steel-500);text-align:center;margin:-6px 0 12px;}
+
+  /* ---- models ---- */
   .model-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;}
   .model-btn{
     border:1.5px solid var(--steel-200);border-radius:3px;background:var(--steel-100);
-    padding:13px 8px;font-size:14.5px;font-weight:650;color:var(--steel-700);cursor:pointer;
+    padding:11px 8px;font-size:14.5px;font-weight:650;color:var(--steel-700);cursor:pointer;
+    font-family:inherit;line-height:1.25;
   }
-  .model-btn.active{border-color:var(--yellow-dark);background:#fff8e1;color:var(--steel-900);}
+  .model-btn small{display:block;font-size:11.5px;font-weight:700;margin-top:3px;}
+  .model-btn.done-adv{background:#e3f1e4;border-color:#9ccc9f;}
+  .model-btn.done-int{background:#e3eef9;border-color:#9fbfe3;}
+  .model-btn.done-bas{background:#fff4d6;border-color:#e2c46b;}
+  .model-btn.done-nq {background:#fbe3e4;border-color:#e3a3a6;}
+  .model-btn.done-adv small{color:var(--green);}
+  .model-btn.done-int small{color:var(--blue);}
+  .model-btn.done-bas small{color:var(--yellow-dark);}
+  .model-btn.done-nq small{color:var(--red);}
+  .model-btn.active{outline:3px solid var(--steel-900);outline-offset:1px;color:var(--steel-900);}
+  .note{font-size:13px;color:var(--steel-700);background:#fff8e1;border-left:3px solid var(--yellow-dark);padding:9px 11px;margin-top:10px;line-height:1.45;}
 
   button.primary{
-    width:100%;padding:16px;font-size:16px;font-weight:700;
+    width:100%;padding:16px;font-size:16px;font-weight:700;font-family:inherit;
     color:var(--steel-900);background:var(--yellow);border:none;border-radius:3px;cursor:pointer;
   }
   button.primary:active{transform:scale(0.98);}
   button.primary:disabled{background:var(--steel-200);color:var(--steel-500);cursor:not-allowed;transform:none;}
   button.ghost{
-    width:100%;padding:13px;font-size:14.5px;font-weight:600;color:var(--steel-700);
+    width:100%;padding:13px;font-size:14.5px;font-weight:600;color:var(--steel-700);font-family:inherit;
     background:transparent;border:1.5px solid var(--steel-200);border-radius:3px;cursor:pointer;margin-top:10px;
   }
+  .cam-actions{display:flex;gap:10px;}
+  .cam-actions button{flex:1;margin-top:0;}
+  a.send{
+    display:block;text-align:center;text-decoration:none;
+    padding:15px;font-size:16px;font-weight:700;border-radius:3px;margin-top:10px;
+  }
+  a.send.wa{background:var(--whatsapp);color:#fff;}
+  a.send.sms{background:#fff;color:var(--steel-700);border:1.5px solid var(--steel-200);font-size:14.5px;font-weight:600;padding:13px;}
+  a.send.off{pointer-events:none;opacity:0.45;}
 
   .err{color:var(--red);font-size:13.5px;font-weight:600;margin:0 0 14px;display:none;}
   .err.show{display:block;}
@@ -106,7 +169,9 @@
     position:sticky;top:0;z-index:5;background:var(--paper);
     padding:12px 0 10px;border-bottom:1px solid var(--steel-200);margin-bottom:14px;
   }
-  .hud-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+  .hud-row{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .hud-left{display:flex;align-items:center;gap:10px;min-width:0;}
+  .hud-left .avatar{width:38px;height:38px;flex-basis:38px;font-size:14px;}
   .hud-who{font-size:14px;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .hud-model{font-size:12.5px;color:var(--steel-500);font-weight:650;}
   .hud-count{font-size:13px;font-weight:750;color:var(--steel-700);white-space:nowrap;}
@@ -162,6 +227,7 @@
   }
   .score-ring .num{font-size:38px;font-weight:800;line-height:1;}
   .score-ring .pct{font-size:13px;color:var(--steel-500);margin-top:4px;}
+  .level-tag{display:inline-block;margin-top:10px;padding:7px 16px;font-weight:750;font-size:14px;border-radius:3px;color:#fff;}
   .result-center{text-align:center;}
   .meta-row{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:10px 0;border-bottom:1px solid var(--steel-100);}
   .meta-row:last-child{border-bottom:none;}
@@ -173,6 +239,11 @@
   .fail-list b{display:block;}
   .fail-list span{color:var(--red);}
   .muted{color:var(--steel-500);font-size:13.5px;}
+  .msg-preview{
+    white-space:pre-wrap;font-size:13.5px;line-height:1.55;background:#e9f6ee;border:1px solid #b9dfc8;
+    border-radius:4px;padding:12px;max-height:260px;overflow:auto;margin-bottom:4px;
+  }
+  .pct-pill{display:inline-block;min-width:46px;text-align:center;padding:3px 8px;border-radius:3px;font-weight:750;font-size:13px;}
 
   .hidden{display:none !important;}
   .spinner{
@@ -181,6 +252,7 @@
   }
   @keyframes spin{to{transform:rotate(360deg);}}
   footer.foot{text-align:center;font-size:11.5px;color:var(--steel-500);padding:22px 16px 8px;}
+  footer.foot a{color:var(--steel-700);}
 </style>
 </head>
 <body>
@@ -189,143 +261,187 @@
 <header class="top" id="site-header">
   <div class="mark">SPARK</div>
   <div class="sub">Skill &amp; Proficiency Assessment for Recruitment &amp; Knowledge</div>
-  <div class="plant">TVS Lanka Horana Assembly Plant — SKD Assembly Skill Assessment (assessor use only)</div>
-  <span class="compact-tag">SKD Assessment</span>
+  <div class="plant"><span data-t="plant">TVS Lanka Horana Assembly Plant — SKD Assembly Skill Assessment (assessor use only)</span> · <a href="matrix.html" data-t="link_matrix">Employee skill matrix</a></div>
+  <div class="lang-toggle">
+    <button class="lang-btn active" id="lang-en" onclick="setLang('en')">English</button>
+    <button class="lang-btn" id="lang-si" onclick="setLang('si')">සිංහල</button>
+  </div>
+  <span class="compact-tag" data-t="compact">SKD Assessment</span>
 </header>
 
 <div class="wrap">
 
   <!-- STEP 1: DETAILS -->
   <section id="step-details">
-    <h1 class="step-title">Assessment details</h1>
-    <p class="step-desc">For supervisors and assessors. Assess one employee on one model at a time, by watching them work.</p>
+    <h1 class="step-title" data-t="det_title">Assessment details</h1>
+    <p class="step-desc" data-t="det_desc">For supervisors and assessors. Assess one employee on one model at a time, by watching them work.</p>
 
     <div class="panel">
-      <h2>Assessor</h2>
-      <label for="in-assessor">Your name</label>
+      <h2 data-t="h_assessor">Assessor</h2>
+      <label for="in-assessor" data-t="lbl_assessor">Your name</label>
       <input type="text" id="in-assessor" autocomplete="name">
-      <label for="in-pin">Assessor PIN</label>
+      <label for="in-pin" data-t="lbl_pin">Assessor PIN</label>
       <input type="password" id="in-pin" inputmode="numeric" autocomplete="off">
     </div>
 
     <div class="panel">
-      <h2>Employee</h2>
-      <label for="in-name">Full name</label>
-      <input type="text" id="in-name" autocomplete="off" placeholder="As per NIC / ID">
-
-      <label>Employment type</label>
+      <h2 data-t="h_employee">Employee</h2>
+      <label data-t="lbl_type">Employment type</label>
       <div class="radio-row">
-        <div class="radio-opt active" id="opt-manpower" onclick="setEmpType('manpower')">Manpower</div>
-        <div class="radio-opt" id="opt-company" onclick="setEmpType('company')">Company</div>
+        <div class="radio-opt active" id="opt-manpower" onclick="setEmpType('manpower')" data-t="lbl_manpower">Manpower</div>
+        <div class="radio-opt" id="opt-company" onclick="setEmpType('company')" data-t="lbl_company">Company</div>
       </div>
 
       <label for="in-id" id="lbl-id">NIC number</label>
-      <input type="text" id="in-id" autocomplete="off" placeholder="200012345678">
+      <div class="id-row">
+        <input type="text" id="in-id" autocomplete="off" placeholder="200012345678" oninput="idChanged()">
+        <button id="btn-find" onclick="findEmployee()" data-t="btn_find">Find</button>
+      </div>
+      <div id="found" class="hidden"></div>
+
+      <label for="in-name" data-t="lbl_name">Full name</label>
+      <input type="text" id="in-name" autocomplete="off" placeholder="As per NIC / ID">
+
+      <label for="in-phone" data-t="lbl_phone">Phone number</label>
+      <input type="tel" id="in-phone" autocomplete="off" inputmode="tel" placeholder="07XXXXXXXX">
+    </div>
+
+    <div class="panel result-center">
+      <h2 style="text-align:left" data-t="h_photo">Employee photo</h2>
+      <div class="cam-frame">
+        <div class="placeholder" id="cam-placeholder" data-t="cam_placeholder">No photo yet</div>
+        <video id="cam-video" autoplay playsinline muted class="hidden"></video>
+        <img id="cam-photo" class="hidden" alt="">
+      </div>
+      <canvas id="cam-canvas" class="hidden"></canvas>
+      <div class="cam-note hidden" id="cam-note"></div>
+      <div class="cam-actions" id="cam-actions-start">
+        <button class="ghost" onclick="openCamera()" data-t="btn_open_cam">Take photo</button>
+      </div>
+      <div class="cam-actions hidden" id="cam-actions-shoot">
+        <button class="primary" onclick="capturePhoto()" data-t="btn_capture">Capture</button>
+        <button class="ghost" onclick="cancelCamera()" data-t="btn_cancel">Cancel</button>
+      </div>
+      <div class="err" id="err-photo" data-t="err_cam" style="margin-top:12px">Camera access is needed. Allow camera permission and try again.</div>
     </div>
 
     <div class="panel">
-      <h2>Model</h2>
+      <h2 data-t="h_model">Model</h2>
       <div class="model-grid" id="model-grid"></div>
+      <div class="note hidden" id="model-note"></div>
     </div>
 
     <div class="err" id="err-details"></div>
-    <button class="primary" id="btn-start" onclick="startAssessment()">Start assessment</button>
+    <button class="primary" id="btn-start" onclick="startAssessment()" data-t="btn_start">Start assessment</button>
   </section>
 
   <!-- STEP 2: ASSESS -->
   <section id="step-assess" class="hidden">
     <div class="hud">
       <div class="hud-row">
-        <div>
-          <div class="hud-who" id="hud-who"></div>
-          <div class="hud-model" id="hud-model"></div>
+        <div class="hud-left">
+          <div id="hud-avatar-wrap"></div>
+          <div style="min-width:0">
+            <div class="hud-who" id="hud-who"></div>
+            <div class="hud-model" id="hud-model"></div>
+          </div>
         </div>
-        <div class="hud-count"><span id="hud-done">0</span> / <span id="hud-total">19</span> areas</div>
+        <div class="hud-count"><span id="hud-done">0</span> / <span id="hud-total">19</span> <span data-t="areas">areas</span></div>
       </div>
       <div class="ticks" id="ticks"></div>
     </div>
 
-    <p class="step-desc">Mark each criterion <b>Pass</b> or <b>Fail</b>. An area counts as <b>skilled</b> only if all 5 criteria pass. Use <b>N/A</b> if the area doesn't apply to this model. N/A areas are left out of the %.</p>
+    <p class="step-desc" data-t="assess_help">Mark each criterion Pass or Fail. An area counts as skilled only if all 5 criteria pass. Use N/A if the area doesn't apply to this model. N/A areas are left out of the %.</p>
 
     <div id="areas"></div>
 
     <div class="panel">
-      <label for="in-remarks">Remarks (optional)</label>
-      <textarea id="in-remarks" placeholder="Anything the next assessor should know"></textarea>
+      <label for="in-remarks" data-t="lbl_remarks">Remarks (optional)</label>
+      <textarea id="in-remarks"></textarea>
     </div>
 
     <div class="err" id="err-assess"></div>
-    <button class="primary" id="btn-review" disabled onclick="goReview()">Review result</button>
-    <button class="ghost" onclick="backToDetails()">Back to details</button>
+    <button class="primary" id="btn-review" disabled onclick="goReview()" data-t="btn_review">Review result</button>
+    <button class="ghost" onclick="show('step-details')" data-t="btn_back_details">Back to details</button>
   </section>
 
   <!-- STEP 3: REVIEW -->
   <section id="step-review" class="hidden">
-    <h1 class="step-title">Review before saving</h1>
-    <p class="step-desc">Check the result. Once saved, it goes into the skill matrix.</p>
+    <h1 class="step-title" data-t="rv_title">Review before saving</h1>
+    <p class="step-desc" data-t="rv_desc">Check the result. Once saved, it goes into the skill matrix.</p>
 
     <div class="panel result-center">
       <div class="score-ring" id="rv-ring">
         <div class="num" id="rv-pct">0%</div>
-        <div class="pct" id="rv-count">0 / 0 skilled</div>
+        <div class="pct" id="rv-count"></div>
       </div>
+      <div class="level-tag" id="rv-level"></div>
     </div>
 
     <div class="panel">
-      <div class="meta-row"><span>Employee</span><span id="rv-name"></span></div>
+      <div class="meta-row"><span data-t="m_employee">Employee</span><span id="rv-name"></span></div>
       <div class="meta-row"><span>ID</span><span id="rv-id"></span></div>
-      <div class="meta-row"><span>Model</span><span id="rv-model"></span></div>
-      <div class="meta-row"><span>Assessor</span><span id="rv-assessor"></span></div>
-      <div class="meta-row"><span>Areas not applicable</span><span id="rv-na"></span></div>
+      <div class="meta-row"><span data-t="m_model">Model</span><span id="rv-model"></span></div>
+      <div class="meta-row"><span data-t="m_assessor">Assessor</span><span id="rv-assessor"></span></div>
+      <div class="meta-row"><span data-t="m_na">Areas not applicable</span><span id="rv-na"></span></div>
     </div>
 
     <div class="panel">
-      <h2>Not yet skilled</h2>
+      <h2 data-t="h_improve">Areas to improve</h2>
       <ul class="fail-list" id="rv-fails"></ul>
     </div>
 
-    <button class="primary" onclick="submitAssessment()">Save assessment</button>
-    <button class="ghost" onclick="show('step-assess')">Back to edit</button>
+    <button class="primary" onclick="submitAssessment()" data-t="btn_save">Save assessment</button>
+    <button class="ghost" onclick="show('step-assess')" data-t="btn_back_edit">Back to edit</button>
   </section>
 
   <!-- SUBMITTING -->
   <section id="step-submitting" class="hidden">
-    <h1 class="step-title">Saving…</h1>
-    <p class="step-desc">Please keep this page open.</p>
+    <h1 class="step-title" data-t="saving">Saving…</h1>
+    <p class="step-desc" data-t="saving_desc">Please keep this page open.</p>
     <div class="spinner"></div>
   </section>
 
   <!-- RESULT -->
   <section id="step-result" class="hidden">
-    <h1 class="step-title">Assessment saved</h1>
+    <h1 class="step-title" data-t="res_title">Assessment saved</h1>
     <p class="step-desc" id="res-desc"></p>
 
     <div class="panel">
-      <h2>Skill matrix for this employee</h2>
+      <h2 data-t="h_send">Send result to employee</h2>
+      <div class="msg-preview" id="msg-preview"></div>
+      <a class="send wa" id="btn-wa" target="_blank" rel="noopener" data-t="btn_wa">Send on WhatsApp</a>
+      <a class="send sms" id="btn-sms" data-t="btn_sms">Send by SMS</a>
+      <div class="muted hidden" id="no-phone" style="margin-top:10px" data-t="no_phone">No phone number entered, so the message can't be sent.</div>
+    </div>
+
+    <div class="panel">
+      <h2 data-t="h_matrix">Skill matrix for this employee</h2>
       <div id="res-matrix"></div>
     </div>
 
-    <button class="primary" onclick="sameEmployeeNextModel()">Assess same employee on another model</button>
-    <button class="ghost" onclick="newEmployee()">New employee</button>
+    <button class="primary" onclick="sameEmployeeNextModel()" data-t="btn_next_model">Assess same employee on another model</button>
+    <button class="ghost" onclick="newEmployee()" data-t="btn_new_emp">New employee</button>
   </section>
 
   <!-- ERROR -->
   <section id="step-error" class="hidden">
-    <h1 class="step-title">Not saved</h1>
-    <p class="step-desc" id="error-msg">The assessment could not be saved. Your marks are still on this page.</p>
-    <button class="primary" onclick="submitAssessment()">Try again</button>
-    <button class="ghost" id="btn-error-back" onclick="show('step-review')">Back to review</button>
+    <h1 class="step-title" data-t="err_title">Not saved</h1>
+    <p class="step-desc" id="error-msg"></p>
+    <button class="primary" onclick="submitAssessment()" data-t="btn_retry">Try again</button>
+    <button class="ghost" onclick="show('step-review')" data-t="btn_back_review">Back to review</button>
   </section>
 
 </div>
 
-<footer class="foot">TVS Lanka (Pvt.) Ltd. — Horana Assembly Plant</footer>
+<footer class="foot">TVS Lanka (Pvt.) Ltd. — Horana Assembly Plant · <a href="matrix.html" data-t="link_matrix">Employee skill matrix</a></footer>
 
 <script>
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmb3QSN2dRrjoH0iEmVlgWVJEktyD9hzyTq7eZTI6QuU1g1nf3E63o2zDR9M5lDw2glA/exec";
 
 // Model order and area/criteria order MUST match SKD_MODELS / SKD_AREAS in
 // backend/SPARK_Code.gs. The backend stores results by these fixed positions.
+// Area and criteria names stay in English (shop-floor terms, as in the Excel).
 const MODELS = ['Sport 110','Ntorq 125','Ronin 225','RTR','iQube','Orbiter','Jupiter','Raider 125'];
 
 const AREAS = [
@@ -351,85 +467,311 @@ const AREAS = [
 ];
 
 /* =========================================================
-   STATE
+   TRANSLATIONS (UI only — area/criteria names stay in English)
    ========================================================= */
-let emp = { name:'', empType:'manpower', idNumber:'' };
-let assessor = { name:'', pin:'' };
-let model = '';
-let marks = [];      // marks[a] = { na:bool, crit:[null|1|0 x5] }
-let openArea = 0;
-let inProgress = false;
-
-function freshMarks(){
-  return AREAS.map(a => ({ na:false, crit:a.crit.map(()=>null) }));
+const T = {
+  en: {
+    plant:'TVS Lanka Horana Assembly Plant — SKD Assembly Skill Assessment (assessor use only)',
+    link_matrix:'Employee skill matrix', compact:'SKD Assessment',
+    det_title:'Assessment details', det_desc:'For supervisors and assessors. Assess one employee on one model at a time, by watching them work.',
+    h_assessor:'Assessor', lbl_assessor:'Your name', lbl_pin:'Assessor PIN',
+    h_employee:'Employee', lbl_type:'Employment type', lbl_manpower:'Manpower', lbl_company:'Company',
+    lbl_nic:'NIC number', lbl_epf:'EPF number', btn_find:'Find', lbl_name:'Full name', lbl_phone:'Phone number',
+    h_photo:'Employee photo', cam_placeholder:'No photo yet', btn_open_cam:'Take photo', btn_retake_cam:'Take new photo',
+    btn_capture:'Capture', btn_cancel:'Cancel', err_cam:'Camera access is needed. Allow camera permission and try again.',
+    photo_on_file:'Photo on file. Take a new one only if it has changed.', photo_new:'New photo will be saved with this assessment.',
+    h_model:'Model', btn_start:'Start assessment', checking:'Checking…',
+    found_title:'Found', found_basic:'Basic exam', found_skd:'SKD all models', found_none:'No previous record. Enter the employee details below.',
+    found_models_done:'Already assessed on', model_note:'Already assessed on {date} ({pct}%, {level}). Saving again replaces this model\'s score in the skill matrix.',
+    err_assessor:'Enter your name as the assessor.', err_pin:'Enter the assessor PIN.', err_id:'Enter the employee ID number.',
+    err_emp:'Enter the employee name and phone number.', err_model:'Choose the model being assessed.',
+    err_photo:'Take a photo of the employee.', err_find_first:'Check the employee record above, then tap Start again.',
+    areas:'areas', assess_help:'Mark each criterion Pass or Fail. An area counts as skilled only if all 5 criteria pass. Use N/A if the area doesn\'t apply to this model. N/A areas are left out of the %.',
+    st_todo:'To do', st_ok:'Skilled', st_no:'Not yet', st_na:'N/A', btn_pass:'Pass', btn_fail:'Fail', btn_allpass:'All pass', btn_na:'N/A for this model',
+    lbl_remarks:'Remarks (optional)', btn_review:'Review result', btn_back_details:'Back to details',
+    rv_title:'Review before saving', rv_desc:'Check the result. Once saved, it goes into the skill matrix.',
+    skilled_of:'{s} / {a} skilled', m_employee:'Employee', m_model:'Model', m_assessor:'Assessor', m_na:'Areas not applicable', none:'None',
+    h_improve:'Areas to improve', failed:'Failed', all_skilled:'None. Skilled in every applicable area.',
+    btn_save:'Save assessment', btn_back_edit:'Back to edit', saving:'Saving…', saving_desc:'Please keep this page open.',
+    res_title:'Assessment saved', res_desc:'{name} — {model}: {pct}% ({s} / {a} areas), {level}.',
+    h_send:'Send result to employee', btn_wa:'Send on WhatsApp', btn_sms:'Send by SMS', no_phone:'No phone number entered, so the message can\'t be sent.',
+    h_matrix:'Skill matrix for this employee', not_assessed:'Not assessed', all_models:'All models',
+    btn_next_model:'Assess same employee on another model', btn_new_emp:'New employee',
+    err_title:'Not saved', err_keep:'Your marks are still on this page.', btn_retry:'Try again', btn_back_review:'Back to review',
+    err_conn:'No connection to the server. Check the internet connection and try again.', err_server:'The server did not confirm. Try again.',
+    lv_adv:'Advanced', lv_int:'Intermediate', lv_bas:'Basic', lv_nq:'Not Qualified'
+  },
+  si: {
+    plant:'TVS Lanka හොරණ එකලස් කිරීමේ පිරියත — SKD එකලස් කිරීමේ කුසලතා ඇගයීම (ඇගයීම්කරුවන්ට පමණි)',
+    link_matrix:'සේවක කුසලතා සටහන', compact:'SKD ඇගයීම',
+    det_title:'ඇගයීමේ විස්තර', det_desc:'අධීක්ෂකවරුන් සහ ඇගයීම්කරුවන් සඳහා. සේවකයා වැඩ කරන අයුරු නිරීක්ෂණය කර, වරකට එක් මාදිලියක් සඳහා ඇගයීම කරන්න.',
+    h_assessor:'ඇගයීම්කරු', lbl_assessor:'ඔබගේ නම', lbl_pin:'ඇගයීම්කරු PIN අංකය',
+    h_employee:'සේවකයා', lbl_type:'රැකියා වර්ගය', lbl_manpower:'Manpower', lbl_company:'Company',
+    lbl_nic:'ජාතික හැඳුනුම්පත් අංකය', lbl_epf:'EPF අංකය', btn_find:'සොයන්න', lbl_name:'සම්පූර්ණ නම', lbl_phone:'දුරකථන අංකය',
+    h_photo:'සේවකයාගේ ඡායාරූපය', cam_placeholder:'තවම ඡායාරූපයක් නැත', btn_open_cam:'ඡායාරූපයක් ගන්න', btn_retake_cam:'නව ඡායාරූපයක් ගන්න',
+    btn_capture:'ගන්න', btn_cancel:'අවලංගු කරන්න', err_cam:'කැමරා ප්‍රවේශය අවශ්‍යයි. කැමරා අවසරය ලබා දී නැවත උත්සාහ කරන්න.',
+    photo_on_file:'ඡායාරූපය දැනටමත් ඇත. වෙනස් වී ඇත්නම් පමණක් නව එකක් ගන්න.', photo_new:'නව ඡායාරූපය මෙම ඇගයීම සමඟ සුරැකේ.',
+    h_model:'මාදිලිය', btn_start:'ඇගයීම අරඹන්න', checking:'පරීක්ෂා කරමින්…',
+    found_title:'හමු විය', found_basic:'මූලික විභාගය', found_skd:'SKD සියලු මාදිලි', found_none:'පෙර වාර්තාවක් නැත. පහත සේවක විස්තර ඇතුළත් කරන්න.',
+    found_models_done:'දැනටමත් ඇගයූ මාදිලි', model_note:'{date} දින දැනටමත් ඇගයීම කර ඇත ({pct}%, {level}). නැවත සුරැකීමෙන් කුසලතා සටහනේ මෙම මාදිලියේ ලකුණු ප්‍රතිස්ථාපනය වේ.',
+    err_assessor:'ඇගයීම්කරු ලෙස ඔබගේ නම ඇතුළත් කරන්න.', err_pin:'ඇගයීම්කරු PIN අංකය ඇතුළත් කරන්න.', err_id:'සේවකයාගේ හැඳුනුම් අංකය ඇතුළත් කරන්න.',
+    err_emp:'සේවකයාගේ නම සහ දුරකථන අංකය ඇතුළත් කරන්න.', err_model:'ඇගයීමට ලක්වන මාදිලිය තෝරන්න.',
+    err_photo:'සේවකයාගේ ඡායාරූපයක් ගන්න.', err_find_first:'ඉහත සේවක වාර්තාව පරීක්ෂා කර, නැවත "ඇගයීම අරඹන්න" ඔබන්න.',
+    areas:'ක්ෂේත්‍ර', assess_help:'සෑම නිර්ණායකයක්ම Pass හෝ Fail ලෙස සලකුණු කරන්න. නිර්ණායක 5ම සමත් වුවහොත් පමණක් ක්ෂේත්‍රය කුසලතා ලෙස ගණන් ගැනේ. මෙම මාදිලියට අදාළ නොවේ නම් N/A භාවිතා කරන්න. N/A ක්ෂේත්‍ර % ගණනයට ඇතුළත් නොවේ.',
+    st_todo:'කළ යුතුයි', st_ok:'කුසලතා ඇත', st_no:'තවම නැත', st_na:'N/A', btn_pass:'Pass', btn_fail:'Fail', btn_allpass:'සියල්ල Pass', btn_na:'මෙම මාදිලියට N/A',
+    lbl_remarks:'සටහන් (අත්‍යවශ්‍ය නොවේ)', btn_review:'ප්‍රතිඵලය බලන්න', btn_back_details:'විස්තර වෙත ආපසු',
+    rv_title:'සුරැකීමට පෙර පරීක්ෂා කරන්න', rv_desc:'ප්‍රතිඵලය පරීක්ෂා කරන්න. සුරැකූ පසු එය කුසලතා සටහනට එක් වේ.',
+    skilled_of:'{a} න් {s} ක් කුසලතා', m_employee:'සේවකයා', m_model:'මාදිලිය', m_assessor:'ඇගයීම්කරු', m_na:'අදාළ නොවන ක්ෂේත්‍ර', none:'නැත',
+    h_improve:'වැඩිදියුණු කළ යුතු ක්ෂේත්‍ර', failed:'අසමත්', all_skilled:'නැත. අදාළ සෑම ක්ෂේත්‍රයකම කුසලතා ඇත.',
+    btn_save:'ඇගයීම සුරකින්න', btn_back_edit:'සංස්කරණයට ආපසු', saving:'සුරකිමින්…', saving_desc:'කරුණාකර මෙම පිටුව විවෘතව තබන්න.',
+    res_title:'ඇගයීම සුරැකිණි', res_desc:'{name} — {model}: {pct}% (ක්ෂේත්‍ර {a} න් {s}), {level}.',
+    h_send:'ප්‍රතිඵලය සේවකයාට යවන්න', btn_wa:'WhatsApp මගින් යවන්න', btn_sms:'SMS මගින් යවන්න', no_phone:'දුරකථන අංකයක් ඇතුළත් කර නැති නිසා පණිවිඩය යැවිය නොහැක.',
+    h_matrix:'මෙම සේවකයාගේ කුසලතා සටහන', not_assessed:'ඇගයීම කර නැත', all_models:'සියලු මාදිලි',
+    btn_next_model:'එම සේවකයා වෙනත් මාදිලියකට ඇගයීම', btn_new_emp:'නව සේවකයෙක්',
+    err_title:'සුරැකුණේ නැත', err_keep:'ඔබගේ ලකුණු තවමත් මෙම පිටුවේ ඇත.', btn_retry:'නැවත උත්සාහ කරන්න', btn_back_review:'පරීක්ෂාවට ආපසු',
+    err_conn:'සේවාදායකයට සම්බන්ධ විය නොහැක. අන්තර්ජාල සම්බන්ධතාවය පරීක්ෂා කර නැවත උත්සාහ කරන්න.', err_server:'සේවාදායකය තහවුරු කළේ නැත. නැවත උත්සාහ කරන්න.',
+    lv_adv:'උසස් (Advanced)', lv_int:'මධ්‍යම (Intermediate)', lv_bas:'මූලික (Basic)', lv_nq:'සුදුසුකම් නොලැබූ (Not Qualified)'
+  }
+};
+let lang = 'en';
+function t(key, vars){
+  let s = (T[lang][key] !== undefined ? T[lang][key] : T.en[key]) || key;
+  if(vars) Object.keys(vars).forEach(k=>{ s = s.split('{'+k+'}').join(vars[k]); });
+  return s;
+}
+function setLang(l){
+  lang = l;
+  document.documentElement.lang = l==='si' ? 'si' : 'en';
+  document.getElementById('lang-en').classList.toggle('active', l==='en');
+  document.getElementById('lang-si').classList.toggle('active', l==='si');
+  document.querySelectorAll('[data-t]').forEach(el=>{ el.textContent = t(el.getAttribute('data-t')); });
+  updateIdLabel();
+  renderModels();
+  renderFound();
+  updatePhotoUI();
+  if(!document.getElementById('step-assess').classList.contains('hidden')) renderAreas();
+  if(!document.getElementById('step-review').classList.contains('hidden')) goReview();
+  if(lastResult && !document.getElementById('step-result').classList.contains('hidden')) showResult(lastResult);
+  try{ localStorage.setItem('spark_lang', l); }catch(_){}
 }
 
+/* =========================================================
+   LEVELS (same bands as the basic entry exam)
+   ========================================================= */
+function levelKey(pct){
+  if(pct>=90) return 'adv';
+  if(pct>=80) return 'int';
+  if(pct>=70) return 'bas';
+  return 'nq';
+}
+const LEVEL_COLOR = { adv:'var(--green)', int:'var(--blue)', bas:'var(--yellow-dark)', nq:'var(--red)' };
+const LEVEL_SI = { adv:'උසස් (Advanced)', int:'මධ්‍යම (Intermediate)', bas:'මූලික (Basic)', nq:'සුදුසුකම් නොලැබූ (Not Qualified)' };
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let emp = { name:'', phone:'', empType:'manpower', idNumber:'' };
+let assessor = { name:'', pin:'' };
+let model = '';
+let marks = [];         // marks[a] = { na:bool, crit:[null|1|0 x5] }
+let openArea = 0;
+let inProgress = false;
+let lookup = null;      // backend lookup result for lookupId
+let lookupId = '';
+let photoDataUrl = null;   // new photo taken on this page
+let stream = null;
+let lastResult = null;
+
+function freshMarks(){ return AREAS.map(a => ({ na:false, crit:a.crit.map(()=>null) })); }
 function esc(s){
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function initials(name){
+  return String(name||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase() || '?';
+}
+function avatarHtml(photo, name){
+  return photo ? `<img class="avatar" src="${esc(photo)}" alt="" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=&quot;avatar&quot;>${esc(initials(name))}</div>'">`
+               : `<div class="avatar">${esc(initials(name))}</div>`;
 }
 
 /* =========================================================
    STEP 1: DETAILS
    ========================================================= */
-function setEmpType(t){
-  emp.empType = t;
-  document.getElementById('opt-manpower').classList.toggle('active', t==='manpower');
-  document.getElementById('opt-company').classList.toggle('active', t==='company');
-  document.getElementById('lbl-id').textContent = t==='company' ? 'EPF number' : 'NIC number';
-  document.getElementById('in-id').placeholder = t==='company' ? 'EPF number' : '200012345678';
+function setEmpType(t_){
+  emp.empType = t_;
+  document.getElementById('opt-manpower').classList.toggle('active', t_==='manpower');
+  document.getElementById('opt-company').classList.toggle('active', t_==='company');
+  updateIdLabel();
+}
+function updateIdLabel(){
+  document.getElementById('lbl-id').textContent = emp.empType==='company' ? t('lbl_epf') : t('lbl_nic');
+  document.getElementById('in-id').placeholder = emp.empType==='company' ? 'EPF' : '200012345678';
+}
+
+function currentId(){ return document.getElementById('in-id').value.trim().toUpperCase(); }
+
+function idChanged(){
+  if(lookup && currentId() !== lookupId){
+    lookup = null; lookupId = '';
+    renderFound(); renderModels(); updatePhotoUI();
+  }
+}
+
+function detailsError(msg){
+  const e = document.getElementById('err-details');
+  e.textContent = msg || '';
+  e.classList.toggle('show', !!msg);
+}
+
+async function findEmployee(){
+  assessor.pin = document.getElementById('in-pin').value.trim();
+  const id = currentId();
+  if(!assessor.pin) return detailsError(t('err_pin'));
+  if(!id) return detailsError(t('err_id'));
+  detailsError('');
+  const btn = document.getElementById('btn-find');
+  btn.disabled = true; btn.textContent = '…';
+  const r = await post({ formType:'skd', action:'lookup', pin:assessor.pin, idNumber:id });
+  btn.disabled = false; btn.textContent = t('btn_find');
+  if(!r.ok) return detailsError(r.message);
+  lookup = r.data; lookupId = id;
+  if(lookup.found && lookup.employee){
+    const e = lookup.employee;
+    const nameEl = document.getElementById('in-name'), phoneEl = document.getElementById('in-phone');
+    if(!nameEl.value.trim()) nameEl.value = e.name || '';
+    if(!phoneEl.value.trim()) phoneEl.value = String(e.phone||'').replace(/^'/,'');
+    if(e.empType) setEmpType(e.empType.toLowerCase()==='company' ? 'company' : 'manpower');
+  }
+  renderFound(); renderModels(); updatePhotoUI();
+  return true;
+}
+
+function renderFound(){
+  const box = document.getElementById('found');
+  if(!lookup){ box.className = 'hidden'; box.innerHTML = ''; return; }
+  if(!lookup.found){
+    box.className = 'found-box new';
+    box.innerHTML = `<div>${esc(t('found_none'))}</div>`;
+    return;
+  }
+  const e = lookup.employee, b = lookup.basic;
+  let lines = `<b>${esc(t('found_title'))}: ${esc(e.name)}</b>`;
+  if(b) lines += `<br>${esc(t('found_basic'))}: ${b.pct}% · ${esc(b.category)} <span class="muted">(${esc(b.date)})</span>`;
+  if(lookup.allModelsPct!==null && lookup.allModelsPct!==undefined) lines += `<br>${esc(t('found_skd'))}: ${lookup.allModelsPct}%`;
+  const done = Object.keys(lookup.models||{});
+  if(done.length) lines += `<br>${esc(t('found_models_done'))}: ${esc(done.join(', '))}`;
+  box.className = 'found-box';
+  box.innerHTML = avatarHtml(e.photo, e.name) + `<div>${lines}</div>`;
 }
 
 function renderModels(){
   const grid = document.getElementById('model-grid');
   grid.innerHTML = '';
+  const done = (lookup && lookup.models) || {};
   MODELS.forEach(m=>{
     const b = document.createElement('button');
-    b.className = 'model-btn' + (m===model ? ' active' : '');
-    b.textContent = m;
+    const d = done[m];
+    b.className = 'model-btn' + (d ? ' done-'+levelKey(d.pct) : '') + (m===model ? ' active' : '');
+    b.innerHTML = esc(m) + (d ? `<small>✓ ${d.pct}% · ${esc(d.date)}</small>` : '');
     b.onclick = ()=>{ model = m; renderModels(); };
     grid.appendChild(b);
   });
+  const note = document.getElementById('model-note');
+  const d = model && done[model];
+  note.classList.toggle('hidden', !d);
+  if(d) note.textContent = t('model_note', { date:d.date, pct:d.pct, level:t('lv_'+levelKey(d.pct)) });
 }
 
-function detailsError(msg){
-  const e = document.getElementById('err-details');
-  e.textContent = msg;
-  e.classList.toggle('show', !!msg);
+/* ---- photo (rear camera: the assessor photographs the employee) ---- */
+function photoOnFile(){ return lookup && lookup.found && lookup.employee && lookup.employee.photo; }
+
+function updatePhotoUI(){
+  const img = document.getElementById('cam-photo');
+  const ph = document.getElementById('cam-placeholder');
+  const note = document.getElementById('cam-note');
+  const startBtn = document.querySelector('#cam-actions-start button');
+  const src = photoDataUrl || photoOnFile() || '';
+  if(stream) return;
+  img.classList.toggle('hidden', !src);
+  ph.classList.toggle('hidden', !!src);
+  if(src && img.getAttribute('src') !== src) img.src = src;
+  note.classList.toggle('hidden', !src);
+  note.textContent = photoDataUrl ? t('photo_new') : (src ? t('photo_on_file') : '');
+  startBtn.textContent = src ? t('btn_retake_cam') : t('btn_open_cam');
 }
+
+async function openCamera(){
+  const errEl = document.getElementById('err-photo');
+  errEl.classList.remove('show');
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:'environment'}, width:{ideal:640}, height:{ideal:640} }, audio:false });
+    const video = document.getElementById('cam-video');
+    video.srcObject = stream;
+    video.classList.remove('hidden');
+    document.getElementById('cam-photo').classList.add('hidden');
+    document.getElementById('cam-placeholder').classList.add('hidden');
+    document.getElementById('cam-note').classList.add('hidden');
+    document.getElementById('cam-actions-start').classList.add('hidden');
+    document.getElementById('cam-actions-shoot').classList.remove('hidden');
+  }catch(e){
+    stream = null;
+    errEl.classList.add('show');
+  }
+}
+function stopCamera(){
+  if(stream){ stream.getTracks().forEach(tr=>tr.stop()); stream = null; }
+  document.getElementById('cam-video').classList.add('hidden');
+  document.getElementById('cam-actions-shoot').classList.add('hidden');
+  document.getElementById('cam-actions-start').classList.remove('hidden');
+}
+function capturePhoto(){
+  const video = document.getElementById('cam-video');
+  const canvas = document.getElementById('cam-canvas');
+  const size = 480;
+  canvas.width = size; canvas.height = size;
+  const vw = video.videoWidth, vh = video.videoHeight;
+  const side = Math.min(vw, vh);
+  canvas.getContext('2d').drawImage(video, (vw-side)/2, (vh-side)/2, side, side, 0, 0, size, size);
+  photoDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+  stopCamera();
+  updatePhotoUI();
+}
+function cancelCamera(){ stopCamera(); updatePhotoUI(); }
 
 async function startAssessment(){
   assessor.name = document.getElementById('in-assessor').value.trim();
   assessor.pin = document.getElementById('in-pin').value.trim();
   emp.name = document.getElementById('in-name').value.trim();
-  emp.idNumber = document.getElementById('in-id').value.trim().toUpperCase();
+  emp.phone = document.getElementById('in-phone').value.trim();
+  emp.idNumber = currentId();
 
-  if(!assessor.name) return detailsError('Enter your name as the assessor.');
-  if(!assessor.pin) return detailsError('Enter the assessor PIN.');
-  if(!emp.name || !emp.idNumber) return detailsError('Enter the employee name and ID number.');
-  if(!model) return detailsError('Choose the model being assessed.');
-  detailsError('');
+  if(!assessor.name) return detailsError(t('err_assessor'));
+  if(!assessor.pin) return detailsError(t('err_pin'));
+  if(!emp.idNumber) return detailsError(t('err_id'));
 
-  // Check the PIN before the assessor fills 95 criteria, not after.
-  const btn = document.getElementById('btn-start');
-  btn.disabled = true; btn.textContent = 'Checking PIN…';
-  try{
-    const r = await post({ formType:'skd', action:'checkPin', pin:assessor.pin });
-    if(!r.ok){ return detailsError(r.message); }
-  } finally {
-    btn.disabled = false; btn.textContent = 'Start assessment';
+  // Always look the employee up first, so already-assessed models are shown.
+  if(!lookup || lookupId !== emp.idNumber){
+    const btn = document.getElementById('btn-start');
+    btn.disabled = true; btn.textContent = t('checking');
+    const ok = await findEmployee();
+    btn.disabled = false; btn.textContent = t('btn_start');
+    if(ok) detailsError(t('err_find_first'));
+    return;
   }
+  emp.name = document.getElementById('in-name').value.trim();
+  emp.phone = document.getElementById('in-phone').value.trim();
+  if(!emp.name || !emp.phone) return detailsError(t('err_emp'));
+  if(!photoDataUrl && !photoOnFile()) return detailsError(t('err_photo'));
+  if(!model) return detailsError(t('err_model'));
+  detailsError('');
 
   if(!inProgress){ marks = freshMarks(); openArea = 0; document.getElementById('in-remarks').value = ''; }
   inProgress = true;
+  document.getElementById('hud-avatar-wrap').innerHTML = avatarHtml(photoDataUrl || photoOnFile(), emp.name);
   document.getElementById('hud-who').textContent = emp.name + ' · ' + emp.idNumber;
   document.getElementById('hud-model').textContent = model;
   renderAreas();
   show('step-assess');
-}
-
-function backToDetails(){
-  // Marks are kept. Changing the model keeps them too, so warn the assessor.
-  show('step-details');
 }
 
 /* =========================================================
@@ -441,7 +783,6 @@ function areaStatus(a){
   if(m.crit.some(v=>v===null)) return 'todo';
   return m.crit.every(v=>v===1) ? 'ok' : 'no';
 }
-const BADGE = { todo:'To do', ok:'Skilled', no:'Not yet', na:'N/A' };
 
 function renderAreas(){
   const wrap = document.getElementById('areas');
@@ -451,23 +792,21 @@ function renderAreas(){
     const card = document.createElement('div');
     card.className = 'area' + (a===openArea ? ' open' : '') + (marks[a].na ? ' is-na' : '');
     card.id = 'area-'+a;
-
     let critHtml = '';
     area.crit.forEach((c, i)=>{
       const v = marks[a].crit[i];
       critHtml += `<div class="crit"><div class="crit-name">${esc(c)}</div><div class="crit-btns">`+
-        `<button class="pf pass${v===1?' on':''}" onclick="setCrit(${a},${i},1)">Pass</button>`+
-        `<button class="pf fail${v===0?' on':''}" onclick="setCrit(${a},${i},0)">Fail</button></div></div>`;
+        `<button class="pf pass${v===1?' on':''}" onclick="setCrit(${a},${i},1)">${esc(t('btn_pass'))}</button>`+
+        `<button class="pf fail${v===0?' on':''}" onclick="setCrit(${a},${i},0)">${esc(t('btn_fail'))}</button></div></div>`;
     });
-
     card.innerHTML =
       `<button class="area-head" onclick="toggleArea(${a})">`+
         `<span class="area-no">${a+1}</span><span class="area-name">${esc(area.name)}</span>`+
-        `<span class="badge ${st}">${BADGE[st]}</span></button>`+
+        `<span class="badge ${st}">${esc(t('st_'+st))}</span></button>`+
       `<div class="area-body">${critHtml}`+
         `<div class="area-tools">`+
-          `<button onclick="allPass(${a})">All pass</button>`+
-          `<button class="${marks[a].na?'on':''}" onclick="toggleNA(${a})">N/A for this model</button>`+
+          `<button onclick="allPass(${a})">${esc(t('btn_allpass'))}</button>`+
+          `<button class="${marks[a].na?'on':''}" onclick="toggleNA(${a})">${esc(t('btn_na'))}</button>`+
         `</div></div>`;
     wrap.appendChild(card);
   });
@@ -481,9 +820,9 @@ function updateHud(){
   AREAS.forEach((_, a)=>{
     const st = areaStatus(a);
     if(st!=='todo') done++;
-    const t = document.createElement('div');
-    t.className = 'tick' + (st==='todo' ? '' : ' '+st);
-    ticks.appendChild(t);
+    const tk = document.createElement('div');
+    tk.className = 'tick' + (st==='todo' ? '' : ' '+st);
+    ticks.appendChild(tk);
   });
   document.getElementById('hud-done').textContent = done;
   document.getElementById('hud-total').textContent = AREAS.length;
@@ -495,14 +834,12 @@ function toggleArea(a){
   renderAreas();
   if(openArea===a) scrollToArea(a);
 }
-
 function scrollToArea(a){
   const el = document.getElementById('area-'+a);
   if(!el) return;
   const hud = document.querySelector('.hud').offsetHeight;
   window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - hud - 8, behavior:'smooth' });
 }
-
 // When an area becomes complete, move straight to the next unfinished one.
 function afterChange(a){
   if(areaStatus(a)!=='todo'){
@@ -516,20 +853,9 @@ function afterChange(a){
   }
   renderAreas();
 }
-
-function setCrit(a, i, v){
-  marks[a].crit[i] = v;
-  afterChange(a);
-}
-function allPass(a){
-  marks[a].na = false;
-  marks[a].crit = marks[a].crit.map(()=>1);
-  afterChange(a);
-}
-function toggleNA(a){
-  marks[a].na = !marks[a].na;
-  afterChange(a);
-}
+function setCrit(a, i, v){ marks[a].crit[i] = v; afterChange(a); }
+function allPass(a){ marks[a].na = false; marks[a].crit = marks[a].crit.map(()=>1); afterChange(a); }
+function toggleNA(a){ marks[a].na = !marks[a].na; afterChange(a); }
 
 /* =========================================================
    STEP 3: REVIEW
@@ -548,12 +874,6 @@ function summary(){
   return { applicable, skilled, pct, fails, na };
 }
 
-function ringColor(pct){
-  if(pct>=90) return 'var(--green)';
-  if(pct>=70) return 'var(--yellow-dark)';
-  return 'var(--red)';
-}
-
 function goReview(){
   const s = summary();
   const errA = document.getElementById('err-assess');
@@ -563,18 +883,20 @@ function goReview(){
     return;
   }
   errA.classList.remove('show');
+  const lk = levelKey(s.pct);
   document.getElementById('rv-pct').textContent = s.pct+'%';
-  document.getElementById('rv-count').textContent = s.skilled+' / '+s.applicable+' skilled';
-  document.getElementById('rv-ring').style.borderColor = ringColor(s.pct);
+  document.getElementById('rv-count').textContent = t('skilled_of', {s:s.skilled, a:s.applicable});
+  document.getElementById('rv-ring').style.borderColor = LEVEL_COLOR[lk];
+  const lv = document.getElementById('rv-level');
+  lv.textContent = t('lv_'+lk); lv.style.background = LEVEL_COLOR[lk];
   document.getElementById('rv-name').textContent = emp.name;
   document.getElementById('rv-id').textContent = emp.idNumber + ' (' + (emp.empType==='company'?'Company':'Manpower') + ')';
   document.getElementById('rv-model').textContent = model;
   document.getElementById('rv-assessor').textContent = assessor.name;
-  document.getElementById('rv-na').textContent = s.na.length ? s.na.length+' ('+s.na.join(', ')+')' : 'None';
-  const ul = document.getElementById('rv-fails');
-  ul.innerHTML = s.fails.length
-    ? s.fails.map(f=>`<li><b>${f.no}. ${esc(f.name)}</b><span>Failed: ${esc(f.failed.join(', '))}</span></li>`).join('')
-    : '<li class="muted">None. Skilled in every applicable area.</li>';
+  document.getElementById('rv-na').textContent = s.na.length ? s.na.length+' ('+s.na.join(', ')+')' : t('none');
+  document.getElementById('rv-fails').innerHTML = s.fails.length
+    ? s.fails.map(f=>`<li><b>${f.no}. ${esc(f.name)}</b><span>${esc(t('failed'))}: ${esc(f.failed.join(', '))}</span></li>`).join('')
+    : `<li class="muted">${esc(t('all_skilled'))}</li>`;
   show('step-review');
 }
 
@@ -594,10 +916,10 @@ async function post(payload){
     try{ parsed = JSON.parse(text); }catch(_){}
     if(resp.ok && parsed && parsed.status==='success') return { ok:true, data:parsed };
     console.error('SPARK backend did not confirm:', resp.status, text);
-    return { ok:false, message:(parsed && parsed.message) ? parsed.message : 'The server did not confirm. Check the connection and try again.' };
+    return { ok:false, message:(parsed && parsed.message) ? parsed.message : t('err_server') };
   }catch(e){
     console.error('SPARK request failed:', e);
-    return { ok:false, message:'No connection to the server. Check the internet connection and try again.' };
+    return { ok:false, message:t('err_conn') };
   }
 }
 
@@ -608,30 +930,87 @@ async function submitAssessment(){
     pin: assessor.pin,
     assessor: assessor.name,
     name: emp.name,
+    phone: emp.phone,
     employeeType: emp.empType,
     idNumber: emp.idNumber,
     model: model,
     areas: marks,
-    remarks: document.getElementById('in-remarks').value.trim()
+    remarks: document.getElementById('in-remarks').value.trim(),
+    photoBase64: photoDataUrl || ''
   });
   if(!r.ok){
-    document.getElementById('error-msg').textContent = r.message + ' Your marks are still on this page.';
+    document.getElementById('error-msg').textContent = r.message + ' ' + t('err_keep');
     show('step-error');
     return;
   }
   inProgress = false;
-  showResult(r.data);
+  const s = summary();
+  lastResult = { data:r.data, summary:s, emp:Object.assign({}, emp), model:model };
+  // Keep the page's view of this employee current for the next model.
+  if(lookup){
+    lookup.models = lookup.models || {};
+    lookup.models[model] = { pct:r.data.modelPct, date:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) };
+    lookup.allModelsPct = r.data.allModelsPct;
+    if(r.data.photo && lookup.employee) lookup.employee.photo = r.data.photo;
+  }
+  photoDataUrl = null;
+  showResult(lastResult);
 }
 
-function showResult(d){
+/* ---- message to the employee (always Sinhala) ---- */
+function sinhalaMessage(res){
+  const d = res.data, s = res.summary;
+  const lk = levelKey(d.modelPct);
+  let msg = `ආයුබෝවන් ${res.emp.name},\n\n`+
+    `TVS Lanka හොරණ එකලස් කිරීමේ පිරියතේ SKD එකලස් කිරීමේ කුසලතා ඇගයීමේ ප්‍රතිඵලය:\n\n`+
+    `මාදිලිය: ${res.model}\n`+
+    `ලකුණු: ${d.modelPct}% (ක්ෂේත්‍ර ${d.applicable} න් ${d.skilled} ක් සමත්)\n`+
+    `වත්මන් මට්ටම: ${LEVEL_SI[lk]}\n`+
+    `සියලු මාදිලි සඳහා සමස්ත කුසලතාව: ${d.allModelsPct}%\n\n`;
+  if(s.fails.length){
+    msg += `වැඩිදියුණු කළ යුතු ක්ෂේත්‍ර:\n` +
+      s.fails.map(f=>`• ${f.name} – ${f.failed.join(', ')}`).join('\n') +
+      `\n\nමෙම ක්ෂේත්‍ර සඳහා පුහුණුව ලබා ගැනීමට ඔබේ අධීක්ෂක හමුවන්න.\n`;
+  } else {
+    msg += `අදාළ සියලුම ක්ෂේත්‍ර සමත්. ඉතා හොඳයි! දිගටම මෙලෙසම කටයුතු කරන්න.\n`;
+  }
+  msg += `\nස්තූතියි,\nTVS Lanka (Pvt.) Ltd. – හොරණ`;
+  return msg;
+}
+
+// 07XXXXXXXX / 7XXXXXXXX / +947XXXXXXXX -> 947XXXXXXXX (Sri Lanka)
+function intlPhone(p){
+  let d = String(p||'').replace(/\D/g,'');
+  if(d.startsWith('00')) d = d.slice(2);
+  if(d.length===10 && d.startsWith('0')) d = '94' + d.slice(1);
+  else if(d.length===9) d = '94' + d;
+  return d.length>=11 ? d : '';
+}
+
+function showResult(res){
+  const d = res.data;
+  const lk = levelKey(d.modelPct);
   document.getElementById('res-desc').textContent =
-    emp.name + ' — ' + model + ': ' + d.modelPct + '% (' + d.skilled + ' / ' + d.applicable + ' areas).';
+    t('res_desc', { name:res.emp.name, model:res.model, pct:d.modelPct, s:d.skilled, a:d.applicable, level:t('lv_'+lk) });
+
+  const msg = sinhalaMessage(res);
+  document.getElementById('msg-preview').textContent = msg;
+  const num = intlPhone(res.emp.phone);
+  const wa = document.getElementById('btn-wa'), sms = document.getElementById('btn-sms');
+  wa.classList.toggle('off', !num); sms.classList.toggle('off', !num);
+  document.getElementById('no-phone').classList.toggle('hidden', !!num);
+  wa.href = num ? 'https://wa.me/' + num + '?text=' + encodeURIComponent(msg) : '#';
+  sms.href = num ? 'sms:+' + num + '?body=' + encodeURIComponent(msg) : '#';
+
   let html = '';
   MODELS.forEach(m=>{
     const v = d.matrix ? d.matrix[m] : null;
-    html += `<div class="meta-row"><span>${esc(m)}</span><span>${v===null||v===undefined||v==='' ? '<span class="muted">Not assessed</span>' : v+'%'}</span></div>`;
+    const cell = (v===null||v===undefined||v==='')
+      ? `<span class="muted">${esc(t('not_assessed'))}</span>`
+      : `<span class="pct-pill" style="background:${LEVEL_COLOR[levelKey(v)]};color:#fff">${v}%</span>`;
+    html += `<div class="meta-row"><span>${esc(m)}</span><span>${cell}</span></div>`;
   });
-  html += `<div class="meta-row"><span><b>All models</b></span><span><b>${d.allModelsPct}%</b></span></div>`;
+  html += `<div class="meta-row"><span><b>${esc(t('all_models'))}</b></span><span><b>${d.allModelsPct}%</b></span></div>`;
   document.getElementById('res-matrix').innerHTML = html;
   show('step-result');
 }
@@ -641,7 +1020,7 @@ function sameEmployeeNextModel(){
   marks = freshMarks();
   openArea = 0;
   document.getElementById('in-remarks').value = '';
-  renderModels();
+  renderModels(); renderFound(); updatePhotoUI();
   show('step-details');
 }
 
@@ -649,12 +1028,11 @@ function newEmployee(){
   model = '';
   marks = freshMarks();
   openArea = 0;
-  emp = { name:'', empType:'manpower', idNumber:'' };
-  document.getElementById('in-name').value = '';
-  document.getElementById('in-id').value = '';
-  document.getElementById('in-remarks').value = '';
+  emp = { name:'', phone:'', empType:'manpower', idNumber:'' };
+  lookup = null; lookupId = ''; photoDataUrl = null; lastResult = null;
+  ['in-name','in-phone','in-id','in-remarks'].forEach(id=>document.getElementById(id).value = '');
   setEmpType('manpower');
-  renderModels();
+  renderModels(); renderFound(); updatePhotoUI();
   show('step-details');
 }
 
@@ -666,6 +1044,7 @@ function show(id){
     document.getElementById(s).classList.toggle('hidden', s!==id);
   });
   document.getElementById('site-header').classList.toggle('compact', id!=='step-details');
+  if(id!=='step-details' && stream) stopCamera();
   window.scrollTo(0,0);
 }
 
@@ -673,7 +1052,9 @@ window.addEventListener('beforeunload', e=>{
   if(inProgress){ e.preventDefault(); e.returnValue = ''; }
 });
 
-renderModels();
+let savedLang = 'en';
+try{ savedLang = localStorage.getItem('spark_lang') || 'en'; }catch(_){}
+setLang(savedLang === 'si' ? 'si' : 'en');
 </script>
 </body>
 </html>
