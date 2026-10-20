@@ -1,24 +1,19 @@
 /**
  * SPARK — TVS Lanka Horana Skill Evaluation Portal
- * Backend: receives exam submissions from the candidate web page,
- * appends a row to the Results sheet, and saves the face photo to Drive.
+ * Backend for two pages:
+ *  - index.html  (Basic Entry Exam): appends a row to the "Results" tab
+ *    and saves the face photo to Drive.
+ *  - assess.html (SKD Assembly Skill Assessment, assessor use): appends a
+ *    row to "SKD Assessments" and updates the "SKD Skill Matrix" tab.
  *
- * SETUP (one time):
- * 1. Open the "SPARK Basic Exam Results" Google Sheet.
- * 2. Extensions > Apps Script.
- * 3. Delete any placeholder code, paste this whole file in.
- * 4. Click "Deploy" > "New deployment".
- *    - Select type: "Web app"
- *    - Execute as: Me (denuwantvsl@gmail.com)
- *    - Who has access: Anyone
- * 5. Click Deploy, authorize the permissions it asks for.
- * 6. Copy the resulting Web App URL — it ends in /exec.
- * 7. Paste that URL into spark_exam.html, replacing
- *    "PASTE_YOUR_DEPLOYED_WEB_APP_URL_HERE" in the APPS_SCRIPT_URL constant.
+ * The web app is already deployed (Execute as: Me, Who has access: Anyone).
+ * After ANY edit: Deploy > Manage deployments > pencil icon >
+ * Version: New version > Deploy. Never use "New deployment" — that
+ * creates a new /exec URL and the live pages would stop saving.
  *
- * If you ever edit this code, you must create a NEW deployment version
- * (Deploy > Manage deployments > pencil icon > New version) for changes
- * to take effect on the live URL.
+ * The SKD page needs a Script Property ASSESSOR_PIN
+ * (Project Settings > Script Properties). Without it, every SKD request
+ * is refused.
  */
 
 const SHEET_ID = '1JYnywXmYnN-n89A9nuEU2i_Ub6-sh-7o-bnt5NXRAVA';
@@ -26,7 +21,7 @@ const PHOTOS_FOLDER_ID = '1abYuGGJnBI0Y5AFJSaEwPZsB1SZfTfrl';
 const SHEET_NAME = 'Results';
 
 // Fixed per-tool question labels and their correct answers, in the same
-// order as QUESTIONS in spark_exam.html. Because the exam shuffles both
+// order as QUESTIONS in index.html. Because the exam shuffles both
 // question order and option order per candidate, these columns are what
 // make every candidate's "Q1" mean the same physical tool — without this,
 // answers land in different columns for every candidate and can't be
@@ -50,6 +45,8 @@ const FIRST_QUESTION_COL = 12; // column L — where Q1's answer lands
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
+    if (data.formType === 'skd') return handleSkd(data);
+
     const ss = SpreadsheetApp.openById(SHEET_ID);
     let sheet = ss.getSheetByName(SHEET_NAME);
     if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
@@ -245,6 +242,196 @@ function columnToLetter(col) {
     col = Math.floor((col - 1) / 26);
   }
   return letter;
+}
+
+/* =====================================================================
+ * SKD ASSEMBLY SKILL ASSESSMENT (assess.html)
+ * Based on "SKD Assembly.xlsx" (Galhena): 19 key areas x 8 models.
+ * Each area has 5 criteria marked Pass/Fail by the assessor. An area is
+ * SKILLED (1) only if all 5 pass, otherwise 0, or N/A if it doesn't
+ * apply to the model. Model % = skilled / applicable areas.
+ * All-models % = average of the 8 model % (not-assessed models count 0),
+ * the same as "Employee working knowledge % for all models" in the Excel.
+ * Model and area order MUST match MODELS / AREAS in assess.html.
+ * ===================================================================== */
+const SKD_ASSESS_SHEET = 'SKD Assessments';
+const SKD_MATRIX_SHEET = 'SKD Skill Matrix';
+const SKD_MODELS = ['Sport 110', 'Ntorq 125', 'Ronin 225', 'RTR', 'iQube', 'Orbiter', 'Jupiter', 'Raider 125'];
+const SKD_AREAS = [
+  ['Depacking Process', ['Safety compliance', 'Correct part identification', 'Proper handling / damage prevention', 'Work method & sequence', 'Housekeeping']],
+  ['Trolly Loading Process', ['Correct loading sequence', 'Load stability', 'Safe handling', 'Damage prevention', 'Workplace housekeeping']],
+  ['Hoister Usage', ['Pre-use safety check', 'Correct lifting point', 'Safe operation', 'Load balance / stability', 'Post-use handling']],
+  ['Handle Bar Assembly', ['Correct part & orientation', 'Proper fitment', 'Torque / tightening', 'Alignment', 'Final quality check']],
+  ['Speedometer Assembly', ['Correct part identification', 'Correct fitment', 'Wiring / connector condition', 'Function check', 'Workmanship']],
+  ['HSG Head Lamp Assembly', ['Correct fitment', 'Wiring / connector condition', 'Alignment', 'Fastener tightening', 'Function check']],
+  ['TSL FR L & R Assembly', ['Correct left/right parts', 'Correct fitment', 'Wiring / connector condition', 'Alignment', 'Final inspection']],
+  ['Front Fender Assembly', ['Correct fitment', 'Alignment', 'Fastener tightening', 'Damage prevention', 'Final inspection']],
+  ['Wheel Assembly – Front', ['Correct wheel / component identification', 'Axle & fitment', 'Torque / tightening', 'Alignment', 'Brake / rotation check']],
+  ['Muffler Assembly', ['Correct fitment', 'Fastener torque', 'Clearance', 'Leakage / abnormal noise check', 'Final inspection']],
+  ['Crash Guard Assembly', ['Correct position', 'Fitment', 'Torque / tightening', 'Clearance', 'Final inspection']],
+  ['Main Footrest Assembly', ['Correct fitment', 'Torque / tightening', 'Movement / function', 'Alignment', 'Final inspection']],
+  ['Footrest L & R Assembly', ['Correct left/right parts', 'Correct fitment', 'Torque / tightening', 'Movement / function', 'Final inspection']],
+  ['Unloading', ['Safe handling', 'Correct unloading sequence', 'Damage prevention', 'Material identification', 'Housekeeping']],
+  ['Testing', ['Correct test procedure', 'Safety compliance', 'Defect identification', 'Accurate result recording', 'Final confirmation']],
+  ['Minor Repair', ['Correct diagnosis', 'Correct repair method', 'Proper tool usage', 'Quality after repair', 'Documentation / confirmation']],
+  ['Major Repair', ['Correct diagnosis', 'Correct repair method', 'Safety compliance', 'Quality after repair', 'Final verification']],
+  ['Identified Damage Parts & Shortages', ['Correct identification', 'Accurate quantity', 'Proper segregation', 'Timely reporting', 'Documentation']],
+  ['Quality of Work', ['First-time-right', 'Workmanship', 'Defect prevention', 'Standard compliance', 'Final quality awareness']]
+];
+// SKD Assessments columns: A..J fixed, then one column per area, then failed criteria.
+const SKD_FIRST_AREA_COL = 11; // column K
+// SKD Skill Matrix columns: A Name, B Type, C ID, then one column per model, then summary.
+const SKD_MATRIX_FIRST_MODEL_COL = 4; // column D
+
+function skdReply(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleSkd(data) {
+  const expectedPin = PropertiesService.getScriptProperties().getProperty('ASSESSOR_PIN');
+  if (!expectedPin) {
+    return skdReply({ status: 'error', message: 'Assessor PIN is not set up yet (Apps Script > Project Settings > Script Properties > ASSESSOR_PIN).' });
+  }
+  if (String(data.pin || '').trim() !== String(expectedPin).trim()) {
+    return skdReply({ status: 'error', message: 'Wrong assessor PIN.' });
+  }
+  if (data.action === 'checkPin') return skdReply({ status: 'success' });
+  if (data.action !== 'submit') return skdReply({ status: 'error', message: 'Unknown action.' });
+
+  // ---- validate ----
+  const model = String(data.model || '');
+  if (SKD_MODELS.indexOf(model) === -1) return skdReply({ status: 'error', message: 'Unknown model: ' + model });
+  const idNumber = String(data.idNumber || '').trim().toUpperCase();
+  const name = String(data.name || '').trim();
+  if (!idNumber || !name) return skdReply({ status: 'error', message: 'Employee name and ID are required.' });
+  const areas = data.areas;
+  if (!Array.isArray(areas) || areas.length !== SKD_AREAS.length) {
+    return skdReply({ status: 'error', message: 'Expected ' + SKD_AREAS.length + ' areas, got ' + (areas ? areas.length : 0) + '.' });
+  }
+
+  // ---- score on the server (don't trust the page's own %) ----
+  const areaResults = [];
+  const failedText = [];
+  let applicable = 0, skilled = 0;
+  for (let a = 0; a < SKD_AREAS.length; a++) {
+    const m = areas[a] || {};
+    if (m.na === true) { areaResults.push('N/A'); continue; }
+    const crit = Array.isArray(m.crit) ? m.crit : [];
+    const critNames = SKD_AREAS[a][1];
+    if (crit.length !== critNames.length || crit.some(v => v !== 0 && v !== 1)) {
+      return skdReply({ status: 'error', message: 'Area ' + (a + 1) + ' (' + SKD_AREAS[a][0] + ') is not fully marked.' });
+    }
+    applicable++;
+    const failed = critNames.filter((_, i) => crit[i] !== 1);
+    if (failed.length === 0) { skilled++; areaResults.push(1); }
+    else { areaResults.push(0); failedText.push((a + 1) + '. ' + SKD_AREAS[a][0] + ': ' + failed.join(', ')); }
+  }
+  if (applicable === 0) return skdReply({ status: 'error', message: 'All areas are N/A. At least one area must be assessed.' });
+  const modelPct = Math.round(skilled / applicable * 100);
+  const empType = data.employeeType === 'company' ? 'Company' : 'Manpower';
+  const now = new Date();
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+
+    // ---- 1. full record of this assessment ----
+    const aSheet = skdAssessSheet(ss);
+    const row = [now, String(data.assessor || ''), name, empType, idNumber, model,
+                 applicable, skilled, modelPct / 100, String(data.remarks || '')];
+    row.push(...areaResults);
+    row.push(failedText.join('\n'));
+    aSheet.appendRow(row);
+
+    // ---- 2. latest result per employee x model ----
+    const mSheet = skdMatrixSheet(ss);
+    const nModels = SKD_MODELS.length;
+    const width = 3 + nModels + 4;
+    const last = mSheet.getLastRow();
+    let r = -1;
+    if (last >= 2) {
+      const ids = mSheet.getRange(2, 3, last - 1, 1).getValues();
+      for (let i = 0; i < ids.length; i++) {
+        if (String(ids[i][0]).trim().toUpperCase() === idNumber) { r = i + 2; break; }
+      }
+    }
+    let mRow;
+    if (r === -1) {
+      r = last + 1;
+      mRow = new Array(width).fill('');
+    } else {
+      mRow = mSheet.getRange(r, 1, 1, width).getValues()[0];
+    }
+    mRow[0] = name;
+    mRow[1] = empType;
+    mRow[2] = idNumber;
+    mRow[SKD_MATRIX_FIRST_MODEL_COL - 1 + SKD_MODELS.indexOf(model)] = modelPct / 100;
+    let sum = 0, assessed = 0;
+    const matrix = {};
+    for (let k = 0; k < nModels; k++) {
+      const v = mRow[SKD_MATRIX_FIRST_MODEL_COL - 1 + k];
+      if (v === '' || v === null) { matrix[SKD_MODELS[k]] = null; continue; }
+      sum += Number(v); assessed++;
+      matrix[SKD_MODELS[k]] = Math.round(Number(v) * 100);
+    }
+    const allPct = sum / nModels;
+    mRow[3 + nModels] = allPct;
+    mRow[3 + nModels + 1] = assessed;
+    mRow[3 + nModels + 2] = now;
+    mRow[3 + nModels + 3] = String(data.assessor || '');
+    mSheet.getRange(r, 1, 1, width).setValues([mRow]);
+
+    return skdReply({
+      status: 'success', model: model, applicable: applicable, skilled: skilled,
+      modelPct: modelPct, allModelsPct: Math.round(allPct * 100), matrix: matrix
+    });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function skdAssessSheet(ss) {
+  let sh = ss.getSheetByName(SKD_ASSESS_SHEET);
+  if (sh && sh.getLastRow() > 0) return sh;
+  if (!sh) sh = ss.insertSheet(SKD_ASSESS_SHEET);
+  const headers = ['Timestamp', 'Assessor', 'Employee Name', 'Employee Type', 'ID Number', 'Model',
+                   'Applicable Areas', 'Skilled Areas', 'Model Skill %', 'Remarks'];
+  SKD_AREAS.forEach((a, i) => headers.push((i + 1) + '. ' + a[0]));
+  headers.push('Failed Criteria');
+  sh.appendRow(headers);
+  sh.setFrozenRows(1);
+  sh.getRange(1, 1, 1, headers.length).setFontWeight('bold').setWrap(true);
+  sh.getRange('I2:I').setNumberFormat('0%');
+  // Area columns: 1 = green, 0 = red, N/A = grey
+  const areaRange = sh.getRange(2, SKD_FIRST_AREA_COL, 999, SKD_AREAS.length);
+  sh.setConditionalFormatRules(sh.getConditionalFormatRules().concat([
+    SpreadsheetApp.newConditionalFormatRule().whenNumberEqualTo(1).setBackground('#d9ead3').setRanges([areaRange]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenNumberEqualTo(0).setBackground('#f4cccc').setRanges([areaRange]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('N/A').setBackground('#e0e0e0').setRanges([areaRange]).build()
+  ]));
+  return sh;
+}
+
+function skdMatrixSheet(ss) {
+  let sh = ss.getSheetByName(SKD_MATRIX_SHEET);
+  if (sh && sh.getLastRow() > 0) return sh;
+  if (!sh) sh = ss.insertSheet(SKD_MATRIX_SHEET);
+  const headers = ['Employee Name', 'Employee Type', 'ID Number'].concat(SKD_MODELS)
+    .concat(['All Models %', 'Models Assessed', 'Last Assessed', 'Last Assessor']);
+  sh.appendRow(headers);
+  sh.setFrozenRows(1);
+  sh.getRange(1, 1, 1, headers.length).setFontWeight('bold').setWrap(true);
+  const pctCols = sh.getRange(2, SKD_MATRIX_FIRST_MODEL_COL, 999, SKD_MODELS.length + 1);
+  pctCols.setNumberFormat('0%');
+  // ISNUMBER keeps not-assessed (blank) models uncoloured.
+  const c = 'D2';
+  sh.setConditionalFormatRules(sh.getConditionalFormatRules().concat([
+    SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied('=AND(ISNUMBER(' + c + '),' + c + '>=0.9)').setBackground('#d9ead3').setRanges([pctCols]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied('=AND(ISNUMBER(' + c + '),' + c + '>=0.7,' + c + '<0.9)').setBackground('#fff2cc').setRanges([pctCols]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied('=AND(ISNUMBER(' + c + '),' + c + '<0.7)').setBackground('#f4cccc').setRanges([pctCols]).build()
+  ]));
+  return sh;
 }
 
 function doGet(e) {

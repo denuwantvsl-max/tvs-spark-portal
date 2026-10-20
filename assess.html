@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TVS Lanka Horana — SPARK SKD Assessment</title>
+<style>
+  :root{
+    --steel-900:#1c2126;
+    --steel-700:#333c44;
+    --steel-500:#5b6670;
+    --steel-200:#c9d0d5;
+    --steel-100:#eef1f2;
+    --paper:#f6f5f1;
+    --yellow:#f2b705;
+    --yellow-dark:#c99000;
+    --red:#c1272d;
+    --red-bg:#fbe9ea;
+    --green:#2e7d32;
+    --green-bg:#e8f3e9;
+    --focus:#0d6efd;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;
+    background:var(--paper);
+    color:var(--steel-900);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  body{
+    min-height:100vh;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .wrap{max-width:560px;margin:0 auto;padding:0 16px 40px;}
+
+  /* ---- header / hazard band ---- */
+  .band{
+    background-image:repeating-linear-gradient(135deg, var(--yellow) 0 14px, var(--steel-900) 14px 28px);
+    height:6px;width:100%;
+  }
+  header.top{background:var(--steel-900);color:var(--paper);padding:20px 16px 18px;}
+  header.top .mark{font-weight:800;font-size:28px;letter-spacing:0.5px;color:var(--yellow);}
+  header.top .sub{font-size:13px;color:var(--steel-200);line-height:1.4;margin-top:4px;}
+  header.top .plant{
+    font-size:12.5px;color:var(--steel-200);margin-top:10px;
+    border-top:1px solid var(--steel-700);padding-top:10px;
+  }
+  header.top .compact-tag{display:none;}
+  header.top.compact{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;}
+  header.top.compact .mark{font-size:19px;}
+  header.top.compact .sub, header.top.compact .plant{display:none;}
+  header.top.compact .compact-tag{display:block;font-size:12px;color:var(--steel-200);font-weight:600;}
+
+  h1.step-title{font-size:21px;font-weight:750;margin:24px 0 4px;}
+  p.step-desc{font-size:14.5px;color:var(--steel-500);line-height:1.5;margin:0 0 18px;}
+
+  .panel{
+    background:#fff;border:1px solid var(--steel-200);border-radius:4px;
+    padding:16px;margin-bottom:16px;
+  }
+  .panel h2{font-size:14px;font-weight:750;margin:0 0 12px;color:var(--steel-700);text-transform:uppercase;letter-spacing:0.4px;}
+
+  label{display:block;font-size:13px;font-weight:650;color:var(--steel-700);margin:0 0 6px;}
+  input[type=text], input[type=password], textarea{
+    width:100%;padding:13px 12px;font-size:16px;
+    border:1.5px solid var(--steel-200);border-radius:3px;
+    background:var(--steel-100);color:var(--steel-900);
+    margin-bottom:16px;font-family:inherit;
+  }
+  textarea{min-height:84px;resize:vertical;}
+  input:focus, textarea:focus{outline:2px solid var(--focus);outline-offset:1px;background:#fff;}
+
+  .radio-row{display:flex;gap:10px;margin-bottom:16px;}
+  .radio-opt{
+    flex:1;border:1.5px solid var(--steel-200);border-radius:3px;
+    padding:13px 10px;text-align:center;font-size:14.5px;font-weight:600;
+    cursor:pointer;background:var(--steel-100);color:var(--steel-700);user-select:none;
+  }
+  .radio-opt.active{border-color:var(--yellow-dark);background:#fff8e1;color:var(--steel-900);}
+
+  .model-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;}
+  .model-btn{
+    border:1.5px solid var(--steel-200);border-radius:3px;background:var(--steel-100);
+    padding:13px 8px;font-size:14.5px;font-weight:650;color:var(--steel-700);cursor:pointer;
+  }
+  .model-btn.active{border-color:var(--yellow-dark);background:#fff8e1;color:var(--steel-900);}
+
+  button.primary{
+    width:100%;padding:16px;font-size:16px;font-weight:700;
+    color:var(--steel-900);background:var(--yellow);border:none;border-radius:3px;cursor:pointer;
+  }
+  button.primary:active{transform:scale(0.98);}
+  button.primary:disabled{background:var(--steel-200);color:var(--steel-500);cursor:not-allowed;transform:none;}
+  button.ghost{
+    width:100%;padding:13px;font-size:14.5px;font-weight:600;color:var(--steel-700);
+    background:transparent;border:1.5px solid var(--steel-200);border-radius:3px;cursor:pointer;margin-top:10px;
+  }
+
+  .err{color:var(--red);font-size:13.5px;font-weight:600;margin:0 0 14px;display:none;}
+  .err.show{display:block;}
+
+  /* ---- assessment HUD ---- */
+  .hud{
+    position:sticky;top:0;z-index:5;background:var(--paper);
+    padding:12px 0 10px;border-bottom:1px solid var(--steel-200);margin-bottom:14px;
+  }
+  .hud-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+  .hud-who{font-size:14px;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .hud-model{font-size:12.5px;color:var(--steel-500);font-weight:650;}
+  .hud-count{font-size:13px;font-weight:750;color:var(--steel-700);white-space:nowrap;}
+  .ticks{display:flex;gap:2px;margin-top:8px;}
+  .tick{height:5px;flex:1;background:var(--steel-200);border-radius:1px;}
+  .tick.ok{background:var(--green);}
+  .tick.no{background:var(--red);}
+  .tick.na{background:var(--steel-500);}
+
+  /* ---- area cards ---- */
+  .area{background:#fff;border:1px solid var(--steel-200);border-radius:4px;margin-bottom:10px;overflow:hidden;}
+  .area.open{border-color:var(--steel-900);border-width:1.5px;}
+  .area-head{
+    display:flex;align-items:center;gap:10px;width:100%;
+    padding:13px 14px;background:none;border:none;text-align:left;cursor:pointer;font-family:inherit;
+  }
+  .area-no{
+    flex:0 0 28px;height:28px;border-radius:50%;background:var(--steel-100);
+    display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:750;color:var(--steel-700);
+  }
+  .area-name{flex:1;font-size:15px;font-weight:700;color:var(--steel-900);line-height:1.3;}
+  .badge{font-size:11.5px;font-weight:750;padding:4px 8px;border-radius:3px;white-space:nowrap;}
+  .badge.todo{background:var(--steel-100);color:var(--steel-500);}
+  .badge.ok{background:var(--green);color:#fff;}
+  .badge.no{background:var(--red);color:#fff;}
+  .badge.na{background:var(--steel-500);color:#fff;}
+  .area-body{padding:0 14px 14px;display:none;}
+  .area.open .area-body{display:block;}
+
+  .crit{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--steel-100);}
+  .crit-name{flex:1;font-size:14.5px;line-height:1.35;}
+  .crit-btns{display:flex;gap:6px;flex:0 0 auto;}
+  .pf{
+    width:62px;padding:10px 0;font-size:13.5px;font-weight:750;border-radius:3px;cursor:pointer;
+    border:1.5px solid var(--steel-200);background:#fff;color:var(--steel-500);font-family:inherit;
+  }
+  .pf.pass.on{background:var(--green);border-color:var(--green);color:#fff;}
+  .pf.fail.on{background:var(--red);border-color:var(--red);color:#fff;}
+  .area.is-na .crit{opacity:0.35;pointer-events:none;}
+
+  .area-tools{display:flex;gap:8px;margin-top:12px;}
+  .area-tools button{
+    flex:1;padding:11px 6px;font-size:13px;font-weight:700;border-radius:3px;cursor:pointer;
+    border:1.5px solid var(--steel-200);background:var(--steel-100);color:var(--steel-700);font-family:inherit;
+  }
+  .area-tools button.on{background:var(--steel-500);border-color:var(--steel-500);color:#fff;}
+
+  /* ---- review / result ---- */
+  .score-ring{
+    width:160px;height:160px;margin:6px auto;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;flex-direction:column;
+    border:10px solid var(--steel-200);
+  }
+  .score-ring .num{font-size:38px;font-weight:800;line-height:1;}
+  .score-ring .pct{font-size:13px;color:var(--steel-500);margin-top:4px;}
+  .result-center{text-align:center;}
+  .meta-row{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:10px 0;border-bottom:1px solid var(--steel-100);}
+  .meta-row:last-child{border-bottom:none;}
+  .meta-row span:first-child{color:var(--steel-500);}
+  .meta-row span:last-child{font-weight:650;text-align:right;}
+  .fail-list{list-style:none;margin:0;padding:0;}
+  .fail-list li{padding:10px 0;border-bottom:1px solid var(--steel-100);font-size:14px;line-height:1.45;}
+  .fail-list li:last-child{border-bottom:none;}
+  .fail-list b{display:block;}
+  .fail-list span{color:var(--red);}
+  .muted{color:var(--steel-500);font-size:13.5px;}
+
+  .hidden{display:none !important;}
+  .spinner{
+    width:34px;height:34px;border-radius:50%;border:4px solid var(--steel-200);border-top-color:var(--yellow-dark);
+    margin:20px auto;animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  footer.foot{text-align:center;font-size:11.5px;color:var(--steel-500);padding:22px 16px 8px;}
+</style>
+</head>
+<body>
+
+<div class="band"></div>
+<header class="top" id="site-header">
+  <div class="mark">SPARK</div>
+  <div class="sub">Skill &amp; Proficiency Assessment for Recruitment &amp; Knowledge</div>
+  <div class="plant">TVS Lanka Horana Assembly Plant — SKD Assembly Skill Assessment (assessor use only)</div>
+  <span class="compact-tag">SKD Assessment</span>
+</header>
+
+<div class="wrap">
+
+  <!-- STEP 1: DETAILS -->
+  <section id="step-details">
+    <h1 class="step-title">Assessment details</h1>
+    <p class="step-desc">For supervisors and assessors. Assess one employee on one model at a time, by watching them work.</p>
+
+    <div class="panel">
+      <h2>Assessor</h2>
+      <label for="in-assessor">Your name</label>
+      <input type="text" id="in-assessor" autocomplete="name">
+      <label for="in-pin">Assessor PIN</label>
+      <input type="password" id="in-pin" inputmode="numeric" autocomplete="off">
+    </div>
+
+    <div class="panel">
+      <h2>Employee</h2>
+      <label for="in-name">Full name</label>
+      <input type="text" id="in-name" autocomplete="off" placeholder="As per NIC / ID">
+
+      <label>Employment type</label>
+      <div class="radio-row">
+        <div class="radio-opt active" id="opt-manpower" onclick="setEmpType('manpower')">Manpower</div>
+        <div class="radio-opt" id="opt-company" onclick="setEmpType('company')">Company</div>
+      </div>
+
+      <label for="in-id" id="lbl-id">NIC number</label>
+      <input type="text" id="in-id" autocomplete="off" placeholder="200012345678">
+    </div>
+
+    <div class="panel">
+      <h2>Model</h2>
+      <div class="model-grid" id="model-grid"></div>
+    </div>
+
+    <div class="err" id="err-details"></div>
+    <button class="primary" id="btn-start" onclick="startAssessment()">Start assessment</button>
+  </section>
+
+  <!-- STEP 2: ASSESS -->
+  <section id="step-assess" class="hidden">
+    <div class="hud">
+      <div class="hud-row">
+        <div>
+          <div class="hud-who" id="hud-who"></div>
+          <div class="hud-model" id="hud-model"></div>
+        </div>
+        <div class="hud-count"><span id="hud-done">0</span> / <span id="hud-total">19</span> areas</div>
+      </div>
+      <div class="ticks" id="ticks"></div>
+    </div>
+
+    <p class="step-desc">Mark each criterion <b>Pass</b> or <b>Fail</b>. An area counts as <b>skilled</b> only if all 5 criteria pass. Use <b>N/A</b> if the area doesn't apply to this model. N/A areas are left out of the %.</p>
+
+    <div id="areas"></div>
+
+    <div class="panel">
+      <label for="in-remarks">Remarks (optional)</label>
+      <textarea id="in-remarks" placeholder="Anything the next assessor should know"></textarea>
+    </div>
+
+    <div class="err" id="err-assess"></div>
+    <button class="primary" id="btn-review" disabled onclick="goReview()">Review result</button>
+    <button class="ghost" onclick="backToDetails()">Back to details</button>
+  </section>
+
+  <!-- STEP 3: REVIEW -->
+  <section id="step-review" class="hidden">
+    <h1 class="step-title">Review before saving</h1>
+    <p class="step-desc">Check the result. Once saved, it goes into the skill matrix.</p>
+
+    <div class="panel result-center">
+      <div class="score-ring" id="rv-ring">
+        <div class="num" id="rv-pct">0%</div>
+        <div class="pct" id="rv-count">0 / 0 skilled</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="meta-row"><span>Employee</span><span id="rv-name"></span></div>
+      <div class="meta-row"><span>ID</span><span id="rv-id"></span></div>
+      <div class="meta-row"><span>Model</span><span id="rv-model"></span></div>
+      <div class="meta-row"><span>Assessor</span><span id="rv-assessor"></span></div>
+      <div class="meta-row"><span>Areas not applicable</span><span id="rv-na"></span></div>
+    </div>
+
+    <div class="panel">
+      <h2>Not yet skilled</h2>
+      <ul class="fail-list" id="rv-fails"></ul>
+    </div>
+
+    <button class="primary" onclick="submitAssessment()">Save assessment</button>
+    <button class="ghost" onclick="show('step-assess')">Back to edit</button>
+  </section>
+
+  <!-- SUBMITTING -->
+  <section id="step-submitting" class="hidden">
+    <h1 class="step-title">Saving…</h1>
+    <p class="step-desc">Please keep this page open.</p>
+    <div class="spinner"></div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="step-result" class="hidden">
+    <h1 class="step-title">Assessment saved</h1>
+    <p class="step-desc" id="res-desc"></p>
+
+    <div class="panel">
+      <h2>Skill matrix for this employee</h2>
+      <div id="res-matrix"></div>
+    </div>
+
+    <button class="primary" onclick="sameEmployeeNextModel()">Assess same employee on another model</button>
+    <button class="ghost" onclick="newEmployee()">New employee</button>
+  </section>
+
+  <!-- ERROR -->
+  <section id="step-error" class="hidden">
+    <h1 class="step-title">Not saved</h1>
+    <p class="step-desc" id="error-msg">The assessment could not be saved. Your marks are still on this page.</p>
+    <button class="primary" onclick="submitAssessment()">Try again</button>
+    <button class="ghost" id="btn-error-back" onclick="show('step-review')">Back to review</button>
+  </section>
+
+</div>
+
+<footer class="foot">TVS Lanka (Pvt.) Ltd. — Horana Assembly Plant</footer>
+
+<script>
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmb3QSN2dRrjoH0iEmVlgWVJEktyD9hzyTq7eZTI6QuU1g1nf3E63o2zDR9M5lDw2glA/exec";
+
+// Model order and area/criteria order MUST match SKD_MODELS / SKD_AREAS in
+// backend/SPARK_Code.gs. The backend stores results by these fixed positions.
+const MODELS = ['Sport 110','Ntorq 125','Ronin 225','RTR','iQube','Orbiter','Jupiter','Raider 125'];
+
+const AREAS = [
+  {name:'Depacking Process', crit:['Safety compliance','Correct part identification','Proper handling / damage prevention','Work method & sequence','Housekeeping']},
+  {name:'Trolly Loading Process', crit:['Correct loading sequence','Load stability','Safe handling','Damage prevention','Workplace housekeeping']},
+  {name:'Hoister Usage', crit:['Pre-use safety check','Correct lifting point','Safe operation','Load balance / stability','Post-use handling']},
+  {name:'Handle Bar Assembly', crit:['Correct part & orientation','Proper fitment','Torque / tightening','Alignment','Final quality check']},
+  {name:'Speedometer Assembly', crit:['Correct part identification','Correct fitment','Wiring / connector condition','Function check','Workmanship']},
+  {name:'HSG Head Lamp Assembly', crit:['Correct fitment','Wiring / connector condition','Alignment','Fastener tightening','Function check']},
+  {name:'TSL FR L & R Assembly', crit:['Correct left/right parts','Correct fitment','Wiring / connector condition','Alignment','Final inspection']},
+  {name:'Front Fender Assembly', crit:['Correct fitment','Alignment','Fastener tightening','Damage prevention','Final inspection']},
+  {name:'Wheel Assembly – Front', crit:['Correct wheel / component identification','Axle & fitment','Torque / tightening','Alignment','Brake / rotation check']},
+  {name:'Muffler Assembly', crit:['Correct fitment','Fastener torque','Clearance','Leakage / abnormal noise check','Final inspection']},
+  {name:'Crash Guard Assembly', crit:['Correct position','Fitment','Torque / tightening','Clearance','Final inspection']},
+  {name:'Main Footrest Assembly', crit:['Correct fitment','Torque / tightening','Movement / function','Alignment','Final inspection']},
+  {name:'Footrest L & R Assembly', crit:['Correct left/right parts','Correct fitment','Torque / tightening','Movement / function','Final inspection']},
+  {name:'Unloading', crit:['Safe handling','Correct unloading sequence','Damage prevention','Material identification','Housekeeping']},
+  {name:'Testing', crit:['Correct test procedure','Safety compliance','Defect identification','Accurate result recording','Final confirmation']},
+  {name:'Minor Repair', crit:['Correct diagnosis','Correct repair method','Proper tool usage','Quality after repair','Documentation / confirmation']},
+  {name:'Major Repair', crit:['Correct diagnosis','Correct repair method','Safety compliance','Quality after repair','Final verification']},
+  {name:'Identified Damage Parts & Shortages', crit:['Correct identification','Accurate quantity','Proper segregation','Timely reporting','Documentation']},
+  {name:'Quality of Work', crit:['First-time-right','Workmanship','Defect prevention','Standard compliance','Final quality awareness']}
+];
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let emp = { name:'', empType:'manpower', idNumber:'' };
+let assessor = { name:'', pin:'' };
+let model = '';
+let marks = [];      // marks[a] = { na:bool, crit:[null|1|0 x5] }
+let openArea = 0;
+let inProgress = false;
+
+function freshMarks(){
+  return AREAS.map(a => ({ na:false, crit:a.crit.map(()=>null) }));
+}
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* =========================================================
+   STEP 1: DETAILS
+   ========================================================= */
+function setEmpType(t){
+  emp.empType = t;
+  document.getElementById('opt-manpower').classList.toggle('active', t==='manpower');
+  document.getElementById('opt-company').classList.toggle('active', t==='company');
+  document.getElementById('lbl-id').textContent = t==='company' ? 'EPF number' : 'NIC number';
+  document.getElementById('in-id').placeholder = t==='company' ? 'EPF number' : '200012345678';
+}
+
+function renderModels(){
+  const grid = document.getElementById('model-grid');
+  grid.innerHTML = '';
+  MODELS.forEach(m=>{
+    const b = document.createElement('button');
+    b.className = 'model-btn' + (m===model ? ' active' : '');
+    b.textContent = m;
+    b.onclick = ()=>{ model = m; renderModels(); };
+    grid.appendChild(b);
+  });
+}
+
+function detailsError(msg){
+  const e = document.getElementById('err-details');
+  e.textContent = msg;
+  e.classList.toggle('show', !!msg);
+}
+
+async function startAssessment(){
+  assessor.name = document.getElementById('in-assessor').value.trim();
+  assessor.pin = document.getElementById('in-pin').value.trim();
+  emp.name = document.getElementById('in-name').value.trim();
+  emp.idNumber = document.getElementById('in-id').value.trim().toUpperCase();
+
+  if(!assessor.name) return detailsError('Enter your name as the assessor.');
+  if(!assessor.pin) return detailsError('Enter the assessor PIN.');
+  if(!emp.name || !emp.idNumber) return detailsError('Enter the employee name and ID number.');
+  if(!model) return detailsError('Choose the model being assessed.');
+  detailsError('');
+
+  // Check the PIN before the assessor fills 95 criteria, not after.
+  const btn = document.getElementById('btn-start');
+  btn.disabled = true; btn.textContent = 'Checking PIN…';
+  try{
+    const r = await post({ formType:'skd', action:'checkPin', pin:assessor.pin });
+    if(!r.ok){ return detailsError(r.message); }
+  } finally {
+    btn.disabled = false; btn.textContent = 'Start assessment';
+  }
+
+  if(!inProgress){ marks = freshMarks(); openArea = 0; document.getElementById('in-remarks').value = ''; }
+  inProgress = true;
+  document.getElementById('hud-who').textContent = emp.name + ' · ' + emp.idNumber;
+  document.getElementById('hud-model').textContent = model;
+  renderAreas();
+  show('step-assess');
+}
+
+function backToDetails(){
+  // Marks are kept. Changing the model keeps them too, so warn the assessor.
+  show('step-details');
+}
+
+/* =========================================================
+   STEP 2: ASSESS
+   ========================================================= */
+function areaStatus(a){
+  const m = marks[a];
+  if(m.na) return 'na';
+  if(m.crit.some(v=>v===null)) return 'todo';
+  return m.crit.every(v=>v===1) ? 'ok' : 'no';
+}
+const BADGE = { todo:'To do', ok:'Skilled', no:'Not yet', na:'N/A' };
+
+function renderAreas(){
+  const wrap = document.getElementById('areas');
+  wrap.innerHTML = '';
+  AREAS.forEach((area, a)=>{
+    const st = areaStatus(a);
+    const card = document.createElement('div');
+    card.className = 'area' + (a===openArea ? ' open' : '') + (marks[a].na ? ' is-na' : '');
+    card.id = 'area-'+a;
+
+    let critHtml = '';
+    area.crit.forEach((c, i)=>{
+      const v = marks[a].crit[i];
+      critHtml += `<div class="crit"><div class="crit-name">${esc(c)}</div><div class="crit-btns">`+
+        `<button class="pf pass${v===1?' on':''}" onclick="setCrit(${a},${i},1)">Pass</button>`+
+        `<button class="pf fail${v===0?' on':''}" onclick="setCrit(${a},${i},0)">Fail</button></div></div>`;
+    });
+
+    card.innerHTML =
+      `<button class="area-head" onclick="toggleArea(${a})">`+
+        `<span class="area-no">${a+1}</span><span class="area-name">${esc(area.name)}</span>`+
+        `<span class="badge ${st}">${BADGE[st]}</span></button>`+
+      `<div class="area-body">${critHtml}`+
+        `<div class="area-tools">`+
+          `<button onclick="allPass(${a})">All pass</button>`+
+          `<button class="${marks[a].na?'on':''}" onclick="toggleNA(${a})">N/A for this model</button>`+
+        `</div></div>`;
+    wrap.appendChild(card);
+  });
+  updateHud();
+}
+
+function updateHud(){
+  const ticks = document.getElementById('ticks');
+  ticks.innerHTML = '';
+  let done = 0;
+  AREAS.forEach((_, a)=>{
+    const st = areaStatus(a);
+    if(st!=='todo') done++;
+    const t = document.createElement('div');
+    t.className = 'tick' + (st==='todo' ? '' : ' '+st);
+    ticks.appendChild(t);
+  });
+  document.getElementById('hud-done').textContent = done;
+  document.getElementById('hud-total').textContent = AREAS.length;
+  document.getElementById('btn-review').disabled = done < AREAS.length;
+}
+
+function toggleArea(a){
+  openArea = (openArea===a) ? -1 : a;
+  renderAreas();
+  if(openArea===a) scrollToArea(a);
+}
+
+function scrollToArea(a){
+  const el = document.getElementById('area-'+a);
+  if(!el) return;
+  const hud = document.querySelector('.hud').offsetHeight;
+  window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - hud - 8, behavior:'smooth' });
+}
+
+// When an area becomes complete, move straight to the next unfinished one.
+function afterChange(a){
+  if(areaStatus(a)!=='todo'){
+    const next = AREAS.findIndex((_, i)=> i>a && areaStatus(i)==='todo');
+    const first = AREAS.findIndex((_, i)=> areaStatus(i)==='todo');
+    const target = next!==-1 ? next : first;
+    openArea = target;
+    renderAreas();
+    if(target!==-1) scrollToArea(target);
+    return;
+  }
+  renderAreas();
+}
+
+function setCrit(a, i, v){
+  marks[a].crit[i] = v;
+  afterChange(a);
+}
+function allPass(a){
+  marks[a].na = false;
+  marks[a].crit = marks[a].crit.map(()=>1);
+  afterChange(a);
+}
+function toggleNA(a){
+  marks[a].na = !marks[a].na;
+  afterChange(a);
+}
+
+/* =========================================================
+   STEP 3: REVIEW
+   ========================================================= */
+function summary(){
+  let applicable = 0, skilled = 0;
+  const fails = [], na = [];
+  AREAS.forEach((area, a)=>{
+    const st = areaStatus(a);
+    if(st==='na'){ na.push(area.name); return; }
+    applicable++;
+    if(st==='ok') skilled++;
+    else fails.push({ no:a+1, name:area.name, failed:area.crit.filter((_, i)=>marks[a].crit[i]===0) });
+  });
+  const pct = applicable ? Math.round(skilled/applicable*100) : 0;
+  return { applicable, skilled, pct, fails, na };
+}
+
+function ringColor(pct){
+  if(pct>=90) return 'var(--green)';
+  if(pct>=70) return 'var(--yellow-dark)';
+  return 'var(--red)';
+}
+
+function goReview(){
+  const s = summary();
+  const errA = document.getElementById('err-assess');
+  if(s.applicable===0){
+    errA.textContent = 'All areas are N/A. At least one area must be assessed.';
+    errA.classList.add('show');
+    return;
+  }
+  errA.classList.remove('show');
+  document.getElementById('rv-pct').textContent = s.pct+'%';
+  document.getElementById('rv-count').textContent = s.skilled+' / '+s.applicable+' skilled';
+  document.getElementById('rv-ring').style.borderColor = ringColor(s.pct);
+  document.getElementById('rv-name').textContent = emp.name;
+  document.getElementById('rv-id').textContent = emp.idNumber + ' (' + (emp.empType==='company'?'Company':'Manpower') + ')';
+  document.getElementById('rv-model').textContent = model;
+  document.getElementById('rv-assessor').textContent = assessor.name;
+  document.getElementById('rv-na').textContent = s.na.length ? s.na.length+' ('+s.na.join(', ')+')' : 'None';
+  const ul = document.getElementById('rv-fails');
+  ul.innerHTML = s.fails.length
+    ? s.fails.map(f=>`<li><b>${f.no}. ${esc(f.name)}</b><span>Failed: ${esc(f.failed.join(', '))}</span></li>`).join('')
+    : '<li class="muted">None. Skilled in every applicable area.</li>';
+  show('step-review');
+}
+
+/* =========================================================
+   SUBMIT
+   ========================================================= */
+// Returns {ok:true, data} or {ok:false, message}. Never assumes success.
+async function post(payload){
+  try{
+    const resp = await fetch(APPS_SCRIPT_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+    const text = await resp.text();
+    let parsed = null;
+    try{ parsed = JSON.parse(text); }catch(_){}
+    if(resp.ok && parsed && parsed.status==='success') return { ok:true, data:parsed };
+    console.error('SPARK backend did not confirm:', resp.status, text);
+    return { ok:false, message:(parsed && parsed.message) ? parsed.message : 'The server did not confirm. Check the connection and try again.' };
+  }catch(e){
+    console.error('SPARK request failed:', e);
+    return { ok:false, message:'No connection to the server. Check the internet connection and try again.' };
+  }
+}
+
+async function submitAssessment(){
+  show('step-submitting');
+  const r = await post({
+    formType:'skd', action:'submit',
+    pin: assessor.pin,
+    assessor: assessor.name,
+    name: emp.name,
+    employeeType: emp.empType,
+    idNumber: emp.idNumber,
+    model: model,
+    areas: marks,
+    remarks: document.getElementById('in-remarks').value.trim()
+  });
+  if(!r.ok){
+    document.getElementById('error-msg').textContent = r.message + ' Your marks are still on this page.';
+    show('step-error');
+    return;
+  }
+  inProgress = false;
+  showResult(r.data);
+}
+
+function showResult(d){
+  document.getElementById('res-desc').textContent =
+    emp.name + ' — ' + model + ': ' + d.modelPct + '% (' + d.skilled + ' / ' + d.applicable + ' areas).';
+  let html = '';
+  MODELS.forEach(m=>{
+    const v = d.matrix ? d.matrix[m] : null;
+    html += `<div class="meta-row"><span>${esc(m)}</span><span>${v===null||v===undefined||v==='' ? '<span class="muted">Not assessed</span>' : v+'%'}</span></div>`;
+  });
+  html += `<div class="meta-row"><span><b>All models</b></span><span><b>${d.allModelsPct}%</b></span></div>`;
+  document.getElementById('res-matrix').innerHTML = html;
+  show('step-result');
+}
+
+function sameEmployeeNextModel(){
+  model = '';
+  marks = freshMarks();
+  openArea = 0;
+  document.getElementById('in-remarks').value = '';
+  renderModels();
+  show('step-details');
+}
+
+function newEmployee(){
+  model = '';
+  marks = freshMarks();
+  openArea = 0;
+  emp = { name:'', empType:'manpower', idNumber:'' };
+  document.getElementById('in-name').value = '';
+  document.getElementById('in-id').value = '';
+  document.getElementById('in-remarks').value = '';
+  setEmpType('manpower');
+  renderModels();
+  show('step-details');
+}
+
+/* =========================================================
+   NAV
+   ========================================================= */
+function show(id){
+  ['step-details','step-assess','step-review','step-submitting','step-result','step-error'].forEach(s=>{
+    document.getElementById(s).classList.toggle('hidden', s!==id);
+  });
+  document.getElementById('site-header').classList.toggle('compact', id!=='step-details');
+  window.scrollTo(0,0);
+}
+
+window.addEventListener('beforeunload', e=>{
+  if(inProgress){ e.preventDefault(); e.returnValue = ''; }
+});
+
+renderModels();
+</script>
+</body>
+</html>
