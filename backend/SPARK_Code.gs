@@ -613,6 +613,100 @@ function skdMatrixSheet(ss) {
   return sh;
 }
 
+/* =====================================================================
+ * 6-MONTHLY SKILL EVALUATION REMINDER (email)
+ * A monthly trigger runs reminderTick at about 8 AM on the 1st; it only
+ * sends in January and July. Install it ONCE: select setupReminderTrigger
+ * in the function dropdown, click Run, approve the permissions.
+ * sendReminderTest sends the same email to the script owner only.
+ * ===================================================================== */
+const REMINDER_TO = ['dinidu@tvslanka.lk', 'malindu.u@tvslanka.lk', 'hrdept@tvslanka.lk'];
+const REMINDER_MONTHS = [0, 6];   // January, July (0 = January)
+const PORTAL_URL = 'https://denuwantvsl-max.github.io/tvs-spark-portal/';
+const OVERDUE_DAYS = 182;
+
+function setupReminderTrigger() {
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'reminderTick')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('reminderTick').timeBased().onMonthDay(1).atHour(8).create();
+  console.log('Reminder trigger installed: 1st of every month ~8 AM, sends in January and July.');
+}
+
+function reminderTick() {
+  const month = Number(Utilities.formatDate(new Date(), TZ, 'M')) - 1;
+  if (REMINDER_MONTHS.indexOf(month) === -1) return;
+  sendSkillEvalReminder(REMINDER_TO);
+}
+
+function sendReminderTest() {
+  sendSkillEvalReminder([Session.getEffectiveUser().getEmail()]);
+}
+
+function sendSkillEvalReminder(recipients) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const now = new Date();
+  const overdue = [], neverAssessed = [];
+  let assessedCount = 0;
+
+  const mSheet = ss.getSheetByName(SKD_MATRIX_SHEET);
+  const seen = {};
+  if (mSheet && mSheet.getLastRow() >= 2) {
+    mSheet.getRange(2, 1, mSheet.getLastRow() - 1, SKD_MATRIX_WIDTH).getValues().forEach(m => {
+      const id = normId(m[2]);
+      if (!id) return;
+      seen[id] = true;
+      assessedCount++;
+      const last = m[3 + SKD_MODELS.length + 2];
+      const days = (last instanceof Date) ? Math.floor((now - last) / 86400000) : 9999;
+      if (days >= OVERDUE_DAYS) {
+        const allV = m[3 + SKD_MODELS.length];
+        overdue.push({ name: String(m[0]), id: id, last: fmtDate(last), all: allV === '' ? '' : Math.round(Number(allV) * 100) + '%' });
+      }
+    });
+  }
+  const basic = skdBasicResultsById(ss);
+  Object.keys(basic).forEach(id => {
+    if (!seen[id]) neverAssessed.push({ name: basic[id].name, id: id, basic: basic[id].pct + '% ' + basic[id].category, date: basic[id].date });
+  });
+
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const table = (head, rows) => rows.length
+    ? '<table cellpadding="6" style="border-collapse:collapse;font-size:13px">' +
+      '<tr style="background:#1c2126;color:#fff">' + head.map(h => '<th align="left">' + esc(h) + '</th>').join('') + '</tr>' +
+      rows.map(r => '<tr style="border-bottom:1px solid #ddd">' + r.map(c => '<td>' + esc(c) + '</td>').join('') + '</tr>').join('') +
+      '</table>'
+    : '<p style="color:#5b6670">None.</p>';
+
+  const period = Utilities.formatDate(now, TZ, 'MMMM yyyy');
+  const html =
+    '<div style="font-family:Arial,sans-serif;color:#1c2126;max-width:680px">' +
+    '<h2 style="margin:0 0 4px">SPARK — 6-monthly skill evaluation due</h2>' +
+    '<p style="margin:0 0 16px;color:#5b6670">TVS Lanka Horana Assembly Plant · ' + esc(period) + '</p>' +
+    '<p>This is the scheduled reminder to carry out the 6-monthly skill evaluation of assembly staff ' +
+    '(SKD assembly skill assessment, one model at a time).</p>' +
+    '<p><b>' + overdue.length + '</b> of ' + assessedCount + ' assessed employees have not been assessed in the last 6 months.<br>' +
+    '<b>' + neverAssessed.length + '</b> people have a basic exam result but no SKD assessment yet.</p>' +
+    '<p>' +
+    '<a href="' + PORTAL_URL + 'assess.html" style="background:#f2b705;color:#1c2126;padding:10px 16px;text-decoration:none;font-weight:bold;border-radius:3px">Start an assessment</a> ' +
+    '&nbsp;<a href="' + PORTAL_URL + 'matrix.html" style="color:#1565c0">Open the employee skill matrix</a> · ' +
+    '<a href="' + PORTAL_URL + 'home.html" style="color:#1565c0">SPARK home</a></p>' +
+    '<h3>Due for re-assessment (last assessed 6+ months ago)</h3>' +
+    table(['Employee', 'ID', 'Last assessed', 'All models'], overdue.map(o => [o.name, o.id, o.last, o.all])) +
+    '<h3>Basic exam done, not yet SKD-assessed</h3>' +
+    table(['Name', 'ID', 'Basic exam', 'Exam date'], neverAssessed.map(o => [o.name, o.id, o.basic, o.date])) +
+    '<p style="color:#5b6670;font-size:12px;margin-top:20px">Sent automatically by SPARK on 1 January and 1 July. ' +
+    'The assessor PIN is needed to open the assessment and matrix pages.</p></div>';
+
+  MailApp.sendEmail({
+    to: recipients.join(','),
+    subject: 'SPARK: 6-monthly skill evaluation due (' + period + ')',
+    htmlBody: html,
+    name: 'SPARK – TVS Lanka Horana'
+  });
+  console.log('Reminder sent to ' + recipients.join(', ') + ' (overdue ' + overdue.length + ', never assessed ' + neverAssessed.length + ')');
+}
+
 function doGet(e) {
   return ContentService
     .createTextOutput(JSON.stringify({ status: 'SPARK backend is live' }))
