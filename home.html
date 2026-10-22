@@ -25,15 +25,15 @@
 
   /* ---- hero: team photo (assets/team.jpg) behind a dark overlay ---- */
   .hero{
-    position:relative;background-color:var(--steel-900);background-size:cover;background-position:center 30%;
+    position:relative;background-color:var(--steel-900);background-size:cover;background-position:center 62%;
     color:var(--paper);overflow:hidden;
   }
   .hero::before{
     content:"";position:absolute;inset:0;
-    background:linear-gradient(180deg, rgba(28,33,38,0.55) 0%, rgba(28,33,38,0.82) 70%, rgba(28,33,38,0.95) 100%);
+    background:linear-gradient(180deg, rgba(28,33,38,0.78) 0%, rgba(28,33,38,0.45) 45%, rgba(28,33,38,0.55) 75%, rgba(28,33,38,0.92) 100%);
   }
   .hero-inner{position:relative;max-width:980px;margin:0 auto;padding:22px 16px 44px;}
-  .hero.has-photo .hero-inner{padding-bottom:120px;}
+  .hero.has-photo .hero-inner{padding-bottom:190px;}
   .top-row{display:flex;justify-content:space-between;align-items:center;gap:12px;}
   .plant-tag{font-size:12.5px;color:var(--steel-200);font-weight:600;}
   .lang-toggle{display:flex;gap:6px;}
@@ -44,7 +44,8 @@
   .lang-btn.active{background:var(--yellow);color:var(--steel-900);border-color:var(--yellow);}
   .mark{font-weight:800;font-size:52px;letter-spacing:1px;color:var(--yellow);margin-top:40px;line-height:1;}
   .tagline{font-size:15px;color:var(--steel-200);margin-top:8px;}
-  .intro{font-size:17px;line-height:1.55;max-width:620px;margin-top:18px;color:#fff;}
+  .intro{font-size:17px;line-height:1.55;max-width:620px;margin-top:18px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.6);}
+  .tagline{text-shadow:0 1px 3px rgba(0,0,0,0.6);}
 
   /* ---- cards ---- */
   .wrap{max-width:980px;margin:-70px auto 0;padding:0 16px 40px;position:relative;}
@@ -78,7 +79,7 @@
     .cards{grid-template-columns:1fr;}
     .mark{font-size:42px;margin-top:28px;}
     .intro{font-size:15.5px;}
-    .hero.has-photo .hero-inner{padding-bottom:100px;}
+    .hero.has-photo .hero-inner{padding-bottom:150px;}
   }
 </style>
 </head>
@@ -111,9 +112,9 @@
     </div>
     <div class="card">
       <div class="step">2</div>
-      <h2 data-t="c2_title">SKD advanced assessment</h2>
+      <h2 data-t="c2_title">Skill assessment</h2>
       <div class="who" data-t="c2_who">Supervisors and assessors</div>
-      <p data-t="c2_desc">Watch the employee work and mark 19 assembly areas, model by model. The result goes into the skill matrix and can be sent to the employee in Sinhala.</p>
+      <p data-t="c2_desc">Watch the employee work and mark each area or workstation activity, model by model, on the SKD, CKD and 3W lines. The result goes into the skill matrix and can be sent to the employee in Sinhala.</p>
       <a href="assess.html" data-t="c2_btn">Start an assessment</a>
       <div class="lock" data-t="pin_note">Assessor PIN needed</div>
     </div>
@@ -127,11 +128,12 @@
     </div>
   </div>
 
-  <div class="next" data-t="next">Coming next: new SKD models (NTORQ 150, RTR 160 4V, RTR 200, RTR 310, RTR 310 RR), a CKD evaluation for XL 100 i-Touch, and evaluations for the 3W and EV Max 3W lines.</div>
+  <div class="next"><b data-t="covered">Lines and models covered</b><div id="lines-list"></div></div>
 </div>
 
 <footer class="foot">TVS Lanka (Pvt.) Ltd. — Horana Assembly Plant</footer>
 
+<script src="templates.js"></script>
 <script>
 const T = {
   en: {
@@ -140,13 +142,13 @@ const T = {
     c1_title:'Basic entry exam', c1_who:'New candidates',
     c1_desc:'20 photo questions on tools, on the candidate\'s own phone. Takes about a minute. Score and category are saved automatically.',
     c1_btn:'Open basic exam',
-    c2_title:'SKD advanced assessment', c2_who:'Supervisors and assessors',
-    c2_desc:'Watch the employee work and mark 19 assembly areas, model by model. The result goes into the skill matrix and can be sent to the employee in Sinhala.',
+    c2_title:'Skill assessment', c2_who:'Supervisors and assessors',
+    c2_desc:'Watch the employee work and mark each area or workstation activity, model by model, on the SKD, CKD and 3W lines. The result goes into the skill matrix and can be sent to the employee in Sinhala.',
     c2_btn:'Start an assessment',
     c3_title:'Employee skill matrix', c3_who:'Management and HR',
     c3_desc:'Every employee with photo, basic exam result and skill per model, as a colour heat map. Sort and search.',
     c3_btn:'View skill matrix', pin_note:'Assessor PIN needed',
-    next:'Coming next: new SKD models (NTORQ 150, RTR 160 4V, RTR 200, RTR 310, RTR 310 RR), a CKD evaluation for XL 100 i-Touch, and evaluations for the 3W and EV Max 3W lines.'
+    covered:'Lines and models covered'
   },
   si: {
     plant:'TVS Lanka (Pvt.) Ltd. — හොරණ එකලස් කිරීමේ පිරියත',
@@ -154,13 +156,13 @@ const T = {
     c1_title:'මූලික ප්‍රවේශ විභාගය', c1_who:'නව අයදුම්කරුවන්',
     c1_desc:'අයදුම්කරුගේම දුරකථනයෙන්, මෙවලම් පිළිබඳ ඡායාරූප ප්‍රශ්න 20ක්. මිනිත්තුවක් පමණ ගතවේ. ලකුණු සහ කාණ්ඩය ස්වයංක්‍රීයව සුරැකේ.',
     c1_btn:'මූලික විභාගය විවෘත කරන්න',
-    c2_title:'SKD උසස් ඇගයීම', c2_who:'අධීක්ෂකවරුන් සහ ඇගයීම්කරුවන්',
-    c2_desc:'සේවකයා වැඩ කරන අයුරු නිරීක්ෂණය කර, මාදිලියෙන් මාදිලියට එකලස් කිරීමේ ක්ෂේත්‍ර 19 ලකුණු කරන්න. ප්‍රතිඵලය කුසලතා සටහනට එක් වන අතර සේවකයාට සිංහලෙන් යැවිය හැක.',
+    c2_title:'කුසලතා ඇගයීම', c2_who:'අධීක්ෂකවරුන් සහ ඇගයීම්කරුවන්',
+    c2_desc:'සේවකයා වැඩ කරන අයුරු නිරීක්ෂණය කර, SKD, CKD සහ 3W මාර්ගවල මාදිලියෙන් මාදිලියට සෑම ක්ෂේත්‍රයක්ම හෝ වැඩපොළ ක්‍රියාකාරකමක්ම ලකුණු කරන්න. ප්‍රතිඵලය කුසලතා සටහනට එක් වන අතර සේවකයාට සිංහලෙන් යැවිය හැක.',
     c2_btn:'ඇගයීමක් අරඹන්න',
     c3_title:'සේවක කුසලතා සටහන', c3_who:'කළමනාකාරිත්වය සහ මානව සම්පත්',
     c3_desc:'සෑම සේවකයෙකුගේම ඡායාරූපය, මූලික විභාග ප්‍රතිඵලය සහ මාදිලිය අනුව කුසලතාව, වර්ණ සටහනක් ලෙස. අනුපිළිවෙලට සකසා සෙවිය හැක.',
     c3_btn:'කුසලතා සටහන බලන්න', pin_note:'ඇගයීම්කරු PIN අංකය අවශ්‍යයි',
-    next:'ඉදිරියේදී: නව SKD මාදිලි (NTORQ 150, RTR 160 4V, RTR 200, RTR 310, RTR 310 RR), XL 100 i-Touch සඳහා CKD ඇගයීමක්, සහ 3W සහ EV Max 3W මාර්ග සඳහා ඇගයීම්.'
+    covered:'ආවරණය වන මාර්ග සහ මාදිලි'
   }
 };
 let lang = 'en';
@@ -172,6 +174,10 @@ function setLang(l){
   document.querySelectorAll('[data-t]').forEach(el=>{ const v = T[l][el.getAttribute('data-t')]; if(v) el.textContent = v; });
   try{ localStorage.setItem('spark_lang', l); }catch(_){}
 }
+
+// Lines and models, from templates.js (same list as the assessment and matrix pages).
+document.getElementById('lines-list').innerHTML = SPARK.lines.map(l =>
+  '<div style="margin-top:4px"><b>' + l.name + ':</b> ' + l.models.join(', ') + '</div>').join('');
 
 // Team photo: shown only if assets/team.jpg exists, so the page works before the photo is added.
 (function(){

@@ -72,7 +72,7 @@
   .tile .k{font-size:12px;color:var(--steel-500);font-weight:650;margin-top:2px;}
 
   /* ---- controls ---- */
-  .controls{display:grid;grid-template-columns:2fr 1fr auto;gap:10px;align-items:end;margin-bottom:12px;}
+  .controls{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end;margin-bottom:12px;}
   .controls button{
     padding:12px 16px;font-size:14px;font-weight:700;font-family:inherit;border-radius:3px;cursor:pointer;
     background:var(--steel-900);color:var(--yellow);border:none;white-space:nowrap;
@@ -83,12 +83,16 @@
 
   /* ---- heat map table ---- */
   .table-wrap{overflow-x:auto;background:#fff;border:1px solid var(--steel-200);border-radius:4px;-webkit-overflow-scrolling:touch;}
-  table{border-collapse:separate;border-spacing:0;width:100%;min-width:980px;font-size:13.5px;}
+  table{border-collapse:separate;border-spacing:0;width:100%;font-size:13.5px;}
   thead th{
     position:sticky;top:0;background:var(--steel-900);color:var(--paper);font-weight:700;font-size:12px;
     padding:10px 6px;text-align:center;white-space:nowrap;z-index:2;
   }
   thead th.sortable{cursor:pointer;}
+  thead tr.groups th{background:var(--steel-700);color:var(--yellow);font-size:11.5px;letter-spacing:0.5px;padding:6px;border-left:2px solid var(--steel-900);}
+  thead tr.groups th.blank{background:var(--steel-900);border-left:none;}
+  thead tr.models th{top:28px;}
+  td.line-start{border-left:2px solid var(--steel-200);}
   thead th.sorted{color:var(--yellow);}
   th.emp-h, td.emp{position:sticky;left:0;z-index:1;text-align:left;}
   thead th.emp-h{z-index:3;padding-left:12px;}
@@ -163,19 +167,23 @@
   <!-- MATRIX -->
   <section id="step-matrix" class="hidden">
     <h1 data-t="pin_title">Employee skill matrix</h1>
-    <p class="desc" data-t="mx_desc">Basic entry exam and SKD assembly skill per model. Highest overall skill first. Not-assessed models count as 0 in "All models", as in the SKD Excel.</p>
+    <p class="desc" data-t="mx_desc">Basic entry exam and assembly skill per model, for the SKD, CKD and 3W lines. Highest overall skill first. Overall = average of every model in the lines the employee has been assessed in (not-assessed models count as 0, as in the SKD Excel).</p>
 
     <div class="tiles">
       <div class="tile"><div class="v" id="k-emps">0</div><div class="k" data-t="k_emps">Employees</div></div>
-      <div class="tile"><div class="v" id="k-skd">0</div><div class="k" data-t="k_skd">SKD assessed</div></div>
+      <div class="tile"><div class="v" id="k-skd">0</div><div class="k" data-t="k_skd">Skill assessed</div></div>
       <div class="tile"><div class="v" id="k-basic">–</div><div class="k" data-t="k_basic">Avg basic exam</div></div>
-      <div class="tile"><div class="v" id="k-all">–</div><div class="k" data-t="k_all">Avg all-models skill</div></div>
+      <div class="tile"><div class="v" id="k-all">–</div><div class="k" data-t="k_all">Avg overall skill</div></div>
     </div>
 
     <div class="controls">
       <div class="search">
         <label for="in-search" data-t="lbl_search">Search name or ID</label>
         <input type="search" id="in-search" oninput="render()">
+      </div>
+      <div>
+        <label for="in-line" data-t="lbl_line">Line</label>
+        <select id="in-line" onchange="lineFilter=this.value;render()"></select>
       </div>
       <div>
         <label for="in-sort" data-t="lbl_sort">Sort by</label>
@@ -188,7 +196,7 @@
 
     <div class="table-wrap">
       <table>
-        <thead><tr id="thead-row"></tr></thead>
+        <thead id="thead"></thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
@@ -198,33 +206,34 @@
 
 <footer class="foot">TVS Lanka (Pvt.) Ltd. — Horana Assembly Plant</footer>
 
+<script src="templates.js"></script>
 <script>
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmb3QSN2dRrjoH0iEmVlgWVJEktyD9hzyTq7eZTI6QuU1g1nf3E63o2zDR9M5lDw2glA/exec";
-// Must match SKD_MODELS in backend/SPARK_Code.gs and MODELS in assess.html.
-const MODELS = ['Sport 110','Ntorq 125','Ronin 225','RTR','iQube','Orbiter','Jupiter','Raider 125'];
+// Lines and models come from templates.js (shared with assess.html and the backend).
+const LINES = SPARK.lines;
 
 const T = {
   en: {
-    sub:'Employee Skill Matrix — TVS Lanka Horana Assembly Plant', link_assess:'New SKD assessment', link_home:'Home',
+    sub:'Employee Skill Matrix — TVS Lanka Horana Assembly Plant', link_assess:'New assessment', link_home:'Home',
     pin_title:'Employee skill matrix', pin_desc:'Contains employee photos and results. Enter the assessor PIN to view.',
     lbl_pin:'Assessor PIN', btn_view:'View matrix', err_pin:'Enter the assessor PIN.',
-    mx_desc:'Basic entry exam and SKD assembly skill per model. Highest overall skill first. Not-assessed models count as 0 in "All models", as in the SKD Excel.',
-    k_emps:'Employees', k_skd:'SKD assessed', k_basic:'Avg basic exam', k_all:'Avg all-models skill',
+    mx_desc:'Basic entry exam and assembly skill per model, for the SKD, CKD and 3W lines. Highest overall skill first. Overall = average of every model in the lines the employee has been assessed in (not-assessed models count as 0, as in the SKD Excel).',
+    k_emps:'Employees', k_skd:'Skill assessed', k_basic:'Avg basic exam', k_all:'Avg overall skill', lbl_line:'Line', all_lines:'All lines',
     lbl_search:'Search name or ID', lbl_sort:'Sort by', btn_refresh:'Refresh',
-    s_all:'All-models skill', s_basic:'Basic exam', s_name:'Name', s_recent:'Last assessed',
-    h_emp:'Employee', h_basic:'Basic exam', h_all:'All models', h_level:'Level',
+    s_all:'Overall skill', s_basic:'Basic exam', s_name:'Name', s_recent:'Last assessed',
+    h_emp:'Employee', h_basic:'Basic exam', h_all:'Overall', h_level:'Level',
     lv_adv:'Advanced', lv_int:'Intermediate', lv_bas:'Basic', lv_nq:'Not Qualified', not_done:'Not assessed',
     none_found:'No employees match.', no_data:'No results yet.', last:'Last'
   },
   si: {
-    sub:'සේවක කුසලතා සටහන — TVS Lanka හොරණ එකලස් කිරීමේ පිරියත', link_assess:'නව SKD ඇගයීමක්', link_home:'මුල් පිටුව',
+    sub:'සේවක කුසලතා සටහන — TVS Lanka හොරණ එකලස් කිරීමේ පිරියත', link_assess:'නව ඇගයීමක්', link_home:'මුල් පිටුව',
     pin_title:'සේවක කුසලතා සටහන', pin_desc:'සේවක ඡායාරූප සහ ප්‍රතිඵල අඩංගුයි. බැලීමට ඇගයීම්කරු PIN අංකය ඇතුළත් කරන්න.',
     lbl_pin:'ඇගයීම්කරු PIN අංකය', btn_view:'සටහන බලන්න', err_pin:'ඇගයීම්කරු PIN අංකය ඇතුළත් කරන්න.',
-    mx_desc:'මූලික ප්‍රවේශ විභාගය සහ එක් එක් මාදිලිය සඳහා SKD එකලස් කිරීමේ කුසලතාව. වැඩිම සමස්ත කුසලතාව ඇති අය මුලින්. SKD Excel හි මෙන්, ඇගයීම නොකළ මාදිලි "සියලු මාදිලි" හි 0 ලෙස ගැනේ.',
-    k_emps:'සේවකයින්', k_skd:'SKD ඇගයූ', k_basic:'මූලික විභාග සාමාන්‍යය', k_all:'සියලු මාදිලි සාමාන්‍යය',
+    mx_desc:'SKD, CKD සහ 3W මාර්ග සඳහා මූලික ප්‍රවේශ විභාගය සහ එක් එක් මාදිලියේ එකලස් කිරීමේ කුසලතාව. වැඩිම සමස්ත කුසලතාව ඇති අය මුලින්. සමස්ත = සේවකයා ඇගයූ මාර්ගවල සියලු මාදිලිවල සාමාන්‍යය (SKD Excel හි මෙන් ඇගයීම නොකළ මාදිලි 0 ලෙස ගැනේ).',
+    k_emps:'සේවකයින්', k_skd:'කුසලතා ඇගයූ', k_basic:'මූලික විභාග සාමාන්‍යය', k_all:'සමස්ත කුසලතා සාමාන්‍යය', lbl_line:'මාර්ගය', all_lines:'සියලු මාර්ග',
     lbl_search:'නම හෝ අංකය සොයන්න', lbl_sort:'අනුපිළිවෙල', btn_refresh:'යාවත්කාලීන කරන්න',
-    s_all:'සියලු මාදිලි කුසලතාව', s_basic:'මූලික විභාගය', s_name:'නම', s_recent:'අවසන් ඇගයීම',
-    h_emp:'සේවකයා', h_basic:'මූලික විභාගය', h_all:'සියලු මාදිලි', h_level:'මට්ටම',
+    s_all:'සමස්ත කුසලතාව', s_basic:'මූලික විභාගය', s_name:'නම', s_recent:'අවසන් ඇගයීම',
+    h_emp:'සේවකයා', h_basic:'මූලික විභාගය', h_all:'සමස්ත', h_level:'මට්ටම',
     lv_adv:'උසස්', lv_int:'මධ්‍යම', lv_bas:'මූලික', lv_nq:'සුදුසුකම් නොලැබූ', not_done:'ඇගයීම කර නැත',
     none_found:'ගැළපෙන සේවකයින් නැත.', no_data:'තවම ප්‍රතිඵල නැත.', last:'අවසන්'
   }
@@ -238,6 +247,7 @@ function setLang(l){
   document.getElementById('lang-si').classList.toggle('active', l==='si');
   document.querySelectorAll('[data-t]').forEach(el=>{ el.textContent = t(el.getAttribute('data-t')); });
   renderSortOptions();
+  renderLineOptions();
   renderLegend();
   if(employees) render();
   try{ localStorage.setItem('spark_lang', l); }catch(_){}
@@ -249,11 +259,18 @@ function initials(n){ return String(n||'?').trim().split(/\s+/).slice(0,2).map(w
 
 let employees = null;
 let sortKey = 'all';
+let lineFilter = 'all';
 let pin = '';
 
 function renderSortOptions(){
   const sel = document.getElementById('in-sort');
   sel.innerHTML = ['all','basic','name','recent'].map(k=>`<option value="${k}"${k===sortKey?' selected':''}>${esc(t('s_'+k))}</option>`).join('');
+}
+function renderLineOptions(){
+  const sel = document.getElementById('in-line');
+  sel.innerHTML = `<option value="all">${esc(t('all_lines'))}</option>` +
+    LINES.map(l=>`<option value="${esc(l.id)}"${l.id===lineFilter?' selected':''}>${esc(l.name)}</option>`).join('');
+  sel.value = lineFilter;
 }
 function renderLegend(){
   document.getElementById('legend').innerHTML =
@@ -302,23 +319,29 @@ function dateValue(s){ const d = Date.parse(s); return isNaN(d) ? 0 : d; }
 
 function render(){
   const q = document.getElementById('in-search').value.trim().toLowerCase();
-  let list = employees.filter(e => !q || String(e.name).toLowerCase().includes(q) || String(e.id).toLowerCase().includes(q));
+  const lines = lineFilter==='all' ? LINES : LINES.filter(l=>l.id===lineFilter);
+  let list = employees.filter(e => (!q || String(e.name).toLowerCase().includes(q) || String(e.id).toLowerCase().includes(q))
+    && (lineFilter==='all' || (e.lines||[]).indexOf(lineFilter)!==-1));
   const num = v => (v===null || v===undefined) ? -1 : v;
   list.sort((a,b)=>{
     if(sortKey==='name') return String(a.name).localeCompare(String(b.name));
-    if(sortKey==='basic') return num(b.basic && b.basic.pct) - num(a.basic && a.basic.pct) || num(b.allPct) - num(a.allPct);
+    if(sortKey==='basic') return num(b.basic && b.basic.pct) - num(a.basic && a.basic.pct) || num(b.overallPct) - num(a.overallPct);
     if(sortKey==='recent') return dateValue(b.lastAssessed) - dateValue(a.lastAssessed);
-    return num(b.allPct) - num(a.allPct) || num(b.basic && b.basic.pct) - num(a.basic && a.basic.pct);
+    return num(b.overallPct) - num(a.overallPct) || num(b.basic && b.basic.pct) - num(a.basic && a.basic.pct);
   });
 
   // header
   const sorted = k => sortKey===k ? ' sorted' : '';
-  document.getElementById('thead-row').innerHTML =
+  document.getElementById('thead').innerHTML =
+    `<tr class="groups"><th class="emp-h blank"></th><th class="blank"></th>`+
+      lines.map(l=>`<th colspan="${l.models.length}">${esc(l.name)}</th>`).join('')+
+      `<th class="blank" colspan="2"></th></tr>`+
+    `<tr class="models">`+
     `<th class="emp-h sortable${sorted('name')}" onclick="setSort('name')">${esc(t('h_emp'))}</th>`+
     `<th class="sortable${sorted('basic')}" onclick="setSort('basic')">${esc(t('h_basic'))}</th>`+
-    MODELS.map(m=>`<th>${esc(m)}</th>`).join('')+
+    lines.map(l=>l.models.map(m=>`<th>${esc(m)}</th>`).join('')).join('')+
     `<th class="sortable${sorted('all')}" onclick="setSort('all')">${esc(t('h_all'))}</th>`+
-    `<th>${esc(t('h_level'))}</th>`;
+    `<th>${esc(t('h_level'))}</th></tr>`;
 
   document.getElementById('tbody').innerHTML = list.map((e, i)=>{
     const photo = e.photo
@@ -326,13 +349,13 @@ function render(){
       : `<div class="avatar">${esc(initials(e.name))}</div>`;
     const meta = [e.id, e.empType].filter(Boolean).join(' · ') + (e.lastAssessed ? ` · ${t('last')} ${e.lastAssessed}` : '');
     const b = e.basic;
-    const lvl = (e.allPct===null || e.allPct===undefined) ? '<span class="muted">–</span>' : esc(t('lv_'+levelKey(e.allPct)));
+    const lvl = (e.overallPct===null || e.overallPct===undefined) ? '<span class="muted">–</span>' : esc(t('lv_'+levelKey(e.overallPct)));
     return `<tr>`+
       `<td class="emp"><div class="emp-cell"><span class="rank">${sortKey==='name' ? '' : i+1}</span>${photo}`+
         `<div style="min-width:0"><div class="emp-name">${esc(e.name)}</div><div class="emp-meta">${esc(meta)}</div></div></div></td>`+
       `<td>${b ? cell(b.pct, b.category) : cell(null)}</td>`+
-      MODELS.map((m, k)=>`<td${k===0?' class="sep"':''}>${cell(e.models ? e.models[m] : null)}</td>`).join('')+
-      `<td class="sep all">${cell(e.allPct)}</td>`+
+      lines.map(l=>l.models.map((m, k)=>`<td${k===0?' class="line-start"':''}>${cell(e.models ? e.models[m] : null)}</td>`).join('')).join('')+
+      `<td class="sep all">${cell(e.overallPct)}</td>`+
       `<td style="font-weight:700;font-size:12.5px;white-space:nowrap">${lvl}</td>`+
     `</tr>`;
   }).join('');
@@ -341,7 +364,7 @@ function render(){
 
   // summary tiles (all employees, not just the filtered list)
   const basics = employees.map(e=>e.basic && e.basic.pct).filter(v=>typeof v==='number');
-  const alls = employees.map(e=>e.allPct).filter(v=>typeof v==='number');
+  const alls = employees.map(e=>e.overallPct).filter(v=>typeof v==='number');
   const avg = a => a.length ? Math.round(a.reduce((x,y)=>x+y,0)/a.length)+'%' : '–';
   document.getElementById('k-emps').textContent = employees.length;
   document.getElementById('k-skd').textContent = alls.length;

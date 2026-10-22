@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>TVS Lanka Horana — SPARK SKD Assessment</title>
+<title>TVS Lanka Horana — SPARK Skill Assessment</title>
 <style>
   :root{
     --steel-900:#1c2126;
@@ -124,6 +124,19 @@
 
   /* ---- models ---- */
   .model-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;}
+  .line-head{grid-column:1 / -1;font-size:12px;font-weight:800;color:var(--steel-500);letter-spacing:0.5px;margin:8px 0 0;text-transform:uppercase;}
+  .line-head:first-child{margin-top:0;}
+  .station-grid{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 8px;}
+  .st-chip{
+    border:1.5px solid var(--steel-200);border-radius:3px;background:var(--steel-100);font-family:inherit;
+    padding:10px 12px;font-size:14px;font-weight:700;color:var(--steel-700);cursor:pointer;
+  }
+  .st-chip small{font-weight:600;color:var(--steel-500);}
+  .st-chip.on{background:var(--steel-900);border-color:var(--steel-900);color:var(--yellow);}
+  .st-chip.on small{color:var(--steel-200);}
+  .tpl-note{font-size:12.5px;color:var(--steel-500);margin:10px 0 4px;line-height:1.45;}
+  .group-head{font-size:13px;font-weight:800;color:var(--steel-900);background:var(--steel-200);border-radius:3px;padding:7px 10px;margin:16px 0 8px;}
+  .group-head:first-child{margin-top:0;}
   .model-btn{
     border:1.5px solid var(--steel-200);border-radius:3px;background:var(--steel-100);
     padding:11px 8px;font-size:14.5px;font-weight:650;color:var(--steel-700);cursor:pointer;
@@ -261,12 +274,12 @@
 <header class="top" id="site-header">
   <div class="mark">SPARK</div>
   <div class="sub">Skill &amp; Proficiency Assessment for Recruitment &amp; Knowledge</div>
-  <div class="plant"><a href="home.html" data-t="link_home">Home</a> · <span data-t="plant">TVS Lanka Horana Assembly Plant — SKD Assembly Skill Assessment (assessor use only)</span> · <a href="matrix.html" data-t="link_matrix">Employee skill matrix</a></div>
+  <div class="plant"><a href="home.html" data-t="link_home">Home</a> · <span data-t="plant">TVS Lanka Horana Assembly Plant — Skill Assessment, SKD / CKD / 3W (assessor use only)</span> · <a href="matrix.html" data-t="link_matrix">Employee skill matrix</a></div>
   <div class="lang-toggle">
     <button class="lang-btn active" id="lang-en" onclick="setLang('en')">English</button>
     <button class="lang-btn" id="lang-si" onclick="setLang('si')">සිංහල</button>
   </div>
-  <span class="compact-tag" data-t="compact">SKD Assessment</span>
+  <span class="compact-tag" data-t="compact">Skill Assessment</span>
 </header>
 
 <div class="wrap">
@@ -329,6 +342,11 @@
       <h2 data-t="h_model">Model</h2>
       <div class="model-grid" id="model-grid"></div>
       <div class="note hidden" id="model-note"></div>
+      <div class="tpl-note hidden" id="tpl-note"></div>
+      <div id="station-box" class="hidden">
+        <label style="margin-top:12px" data-t="lbl_stations">Workstations to assess</label>
+        <div class="station-grid" id="station-grid"></div>
+      </div>
     </div>
 
     <div class="err" id="err-details"></div>
@@ -436,43 +454,38 @@
 
 <footer class="foot"><a href="home.html" data-t="link_home">Home</a> · TVS Lanka (Pvt.) Ltd. — Horana Assembly Plant · <a href="matrix.html" data-t="link_matrix">Employee skill matrix</a></footer>
 
+<script src="templates.js"></script>
 <script>
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmb3QSN2dRrjoH0iEmVlgWVJEktyD9hzyTq7eZTI6QuU1g1nf3E63o2zDR9M5lDw2glA/exec";
 
-// Model order and area/criteria order MUST match SKD_MODELS / SKD_AREAS in
-// backend/SPARK_Code.gs. The backend stores results by these fixed positions.
-// Area and criteria names stay in English (shop-floor terms, as in the Excel).
-const MODELS = ['Sport 110','Ntorq 125','Ronin 225','RTR','iQube','Orbiter','Jupiter','Raider 125'];
+// Models and evaluation templates come from templates.js (SPARK), shared with matrix.html.
+// backend/SPARK_Code.gs holds a generated copy (tools/sync-templates.js): change templates.js, then sync + redeploy.
+// Area, activity and criteria names stay in English (shop-floor terms, as in Gala's sheets).
+const MODELS = SPARK.lines.reduce((a, l) => a.concat(l.models), []);
+function tplOf(m){ return SPARK.templates[SPARK.modelTemplate[m]]; }
+let ITEMS = [];      // what is being assessed: [{no, name, station, crit}]
+let stations = [];   // chosen workstation codes (workstation templates only)
+let marksKey = '';   // model + stations the current marks belong to
 
-const AREAS = [
-  {name:'Depacking Process', crit:['Safety compliance','Correct part identification','Proper handling / damage prevention','Work method & sequence','Housekeeping']},
-  {name:'Trolly Loading Process', crit:['Correct loading sequence','Load stability','Safe handling','Damage prevention','Workplace housekeeping']},
-  {name:'Hoister Usage', crit:['Pre-use safety check','Correct lifting point','Safe operation','Load balance / stability','Post-use handling']},
-  {name:'Handle Bar Assembly', crit:['Correct part & orientation','Proper fitment','Torque / tightening','Alignment','Final quality check']},
-  {name:'Speedometer Assembly', crit:['Correct part identification','Correct fitment','Wiring / connector condition','Function check','Workmanship']},
-  {name:'HSG Head Lamp Assembly', crit:['Correct fitment','Wiring / connector condition','Alignment','Fastener tightening','Function check']},
-  {name:'TSL FR L & R Assembly', crit:['Correct left/right parts','Correct fitment','Wiring / connector condition','Alignment','Final inspection']},
-  {name:'Front Fender Assembly', crit:['Correct fitment','Alignment','Fastener tightening','Damage prevention','Final inspection']},
-  {name:'Wheel Assembly – Front', crit:['Correct wheel / component identification','Axle & fitment','Torque / tightening','Alignment','Brake / rotation check']},
-  {name:'Muffler Assembly', crit:['Correct fitment','Fastener torque','Clearance','Leakage / abnormal noise check','Final inspection']},
-  {name:'Crash Guard Assembly', crit:['Correct position','Fitment','Torque / tightening','Clearance','Final inspection']},
-  {name:'Main Footrest Assembly', crit:['Correct fitment','Torque / tightening','Movement / function','Alignment','Final inspection']},
-  {name:'Footrest L & R Assembly', crit:['Correct left/right parts','Correct fitment','Torque / tightening','Movement / function','Final inspection']},
-  {name:'Unloading', crit:['Safe handling','Correct unloading sequence','Damage prevention','Material identification','Housekeeping']},
-  {name:'Testing', crit:['Correct test procedure','Safety compliance','Defect identification','Accurate result recording','Final confirmation']},
-  {name:'Minor Repair', crit:['Correct diagnosis','Correct repair method','Proper tool usage','Quality after repair','Documentation / confirmation']},
-  {name:'Major Repair', crit:['Correct diagnosis','Correct repair method','Safety compliance','Quality after repair','Final verification']},
-  {name:'Identified Damage Parts & Shortages', crit:['Correct identification','Accurate quantity','Proper segregation','Timely reporting','Documentation']},
-  {name:'Quality of Work', crit:['First-time-right','Workmanship','Defect prevention','Standard compliance','Final quality awareness']}
-];
+function buildItems(){
+  const tpl = tplOf(model);
+  if(!tpl) return [];
+  if(tpl.kind === 'areas') return tpl.areas.map((a, i) => ({ no:String(i+1), name:a.name, station:'', crit:a.crit }));
+  const out = [];
+  tpl.stations.forEach(st=>{
+    if(stations.indexOf(st.code) === -1) return;
+    st.items.forEach((txt, i)=> out.push({ no:String(i+1), name:txt, station:st.code, crit:SPARK.criteria5 }));
+  });
+  return out;
+}
 
 /* =========================================================
    TRANSLATIONS (UI only — area/criteria names stay in English)
    ========================================================= */
 const T = {
   en: {
-    plant:'TVS Lanka Horana Assembly Plant — SKD Assembly Skill Assessment (assessor use only)',
-    link_matrix:'Employee skill matrix', link_home:'Home', compact:'SKD Assessment',
+    plant:'TVS Lanka Horana Assembly Plant — Skill Assessment, SKD / CKD / 3W (assessor use only)',
+    link_matrix:'Employee skill matrix', link_home:'Home', compact:'Skill Assessment',
     det_title:'Assessment details', det_desc:'For supervisors and assessors. Assess one employee on one model at a time, by watching them work.',
     h_assessor:'Assessor', lbl_assessor:'Your name', lbl_pin:'Assessor PIN',
     h_employee:'Employee', lbl_type:'Employment type', lbl_manpower:'Manpower', lbl_company:'Company',
@@ -480,30 +493,32 @@ const T = {
     h_photo:'Employee photo', cam_placeholder:'No photo yet', btn_open_cam:'Take photo', btn_retake_cam:'Take new photo',
     btn_capture:'Capture', btn_cancel:'Cancel', err_cam:'Camera access is needed. Allow camera permission and try again.',
     photo_on_file:'Photo on file. Take a new one only if it has changed.', photo_new:'New photo will be saved with this assessment.',
-    h_model:'Model', btn_start:'Start assessment', checking:'Checking…',
-    found_title:'Found', found_basic:'Basic exam', found_skd:'SKD all models', found_none:'No previous record. Enter the employee details below.',
+    h_model:'Model', btn_start:'Start assessment', checking:'Checking…', lbl_stations:'Workstations to assess',
+    tpl_areas:'Method: 19 key areas (SKD Assembly sheet).', tpl_stations:'Method: workstation evaluation ({n} workstations). Choose the station(s) this employee works on.',
+    err_stations:'Choose at least one workstation.', acts:'activities',
+    found_title:'Found', found_basic:'Basic exam', found_skd:'Overall skill', found_none:'No previous record. Enter the employee details below.',
     found_models_done:'Already assessed on', model_note:'Already assessed on {date} ({pct}%, {level}). Saving again replaces this model\'s score in the skill matrix.',
     err_assessor:'Enter your name as the assessor.', err_pin:'Enter the assessor PIN.', err_id:'Enter the employee ID number.',
     err_emp:'Enter the employee name and phone number.', err_model:'Choose the model being assessed.',
     err_photo:'Take a photo of the employee.', err_find_first:'Check the employee record above, then tap Start again.',
-    areas:'areas', assess_help:'Mark each criterion Pass or Fail. An area counts as skilled only if all 5 criteria pass. Use N/A if the area doesn\'t apply to this model. N/A areas are left out of the %.',
-    st_todo:'To do', st_ok:'Skilled', st_no:'Not yet', st_na:'N/A', btn_pass:'Pass', btn_fail:'Fail', btn_allpass:'All pass', btn_na:'N/A for this model',
+    areas:'items', assess_help:'Mark each criterion Pass or Fail. An area or activity counts as skilled only if all 5 criteria pass. Use N/A if it doesn\'t apply. N/A items are left out of the %.',
+    st_todo:'To do', st_ok:'Skilled', st_no:'Not yet', st_na:'N/A', btn_pass:'Pass', btn_fail:'Fail', btn_allpass:'All pass', btn_na:'N/A',
     lbl_remarks:'Remarks (optional)', btn_review:'Review result', btn_back_details:'Back to details',
     rv_title:'Review before saving', rv_desc:'Check the result. Once saved, it goes into the skill matrix.',
     skilled_of:'{s} / {a} skilled', m_employee:'Employee', m_model:'Model', m_assessor:'Assessor', m_na:'Areas not applicable', none:'None',
     h_improve:'Areas to improve', failed:'Failed', all_skilled:'None. Skilled in every applicable area.',
     btn_save:'Save assessment', btn_back_edit:'Back to edit', saving:'Saving…', saving_desc:'Please keep this page open.',
-    res_title:'Assessment saved', res_desc:'{name} — {model}: {pct}% ({s} / {a} areas), {level}.',
+    res_title:'Assessment saved', res_desc:'{name} — {model}: {pct}% ({s} / {a} items), {level}.',
     h_send:'Send result to employee', btn_wa:'Send on WhatsApp', btn_sms:'Send by SMS', no_phone:'No phone number entered, so the message can\'t be sent.',
-    h_matrix:'Skill matrix for this employee', not_assessed:'Not assessed', all_models:'All models',
+    h_matrix:'Skill matrix for this employee', not_assessed:'Not assessed', all_models:'Overall (assessed lines)',
     btn_next_model:'Assess same employee on another model', btn_new_emp:'New employee',
     err_title:'Not saved', err_keep:'Your marks are still on this page.', btn_retry:'Try again', btn_back_review:'Back to review',
     err_conn:'No connection to the server. Check the internet connection and try again.', err_server:'The server did not confirm. Try again.',
     lv_adv:'Advanced', lv_int:'Intermediate', lv_bas:'Basic', lv_nq:'Not Qualified'
   },
   si: {
-    plant:'TVS Lanka හොරණ එකලස් කිරීමේ පිරියත — SKD එකලස් කිරීමේ කුසලතා ඇගයීම (ඇගයීම්කරුවන්ට පමණි)',
-    link_matrix:'සේවක කුසලතා සටහන', link_home:'මුල් පිටුව', compact:'SKD ඇගයීම',
+    plant:'TVS Lanka හොරණ එකලස් කිරීමේ පිරියත — කුසලතා ඇගයීම, SKD / CKD / 3W (ඇගයීම්කරුවන්ට පමණි)',
+    link_matrix:'සේවක කුසලතා සටහන', link_home:'මුල් පිටුව', compact:'කුසලතා ඇගයීම',
     det_title:'ඇගයීමේ විස්තර', det_desc:'අධීක්ෂකවරුන් සහ ඇගයීම්කරුවන් සඳහා. සේවකයා වැඩ කරන අයුරු නිරීක්ෂණය කර, වරකට එක් මාදිලියක් සඳහා ඇගයීම කරන්න.',
     h_assessor:'ඇගයීම්කරු', lbl_assessor:'ඔබගේ නම', lbl_pin:'ඇගයීම්කරු PIN අංකය',
     h_employee:'සේවකයා', lbl_type:'රැකියා වර්ගය', lbl_manpower:'Manpower', lbl_company:'Company',
@@ -511,14 +526,16 @@ const T = {
     h_photo:'සේවකයාගේ ඡායාරූපය', cam_placeholder:'තවම ඡායාරූපයක් නැත', btn_open_cam:'ඡායාරූපයක් ගන්න', btn_retake_cam:'නව ඡායාරූපයක් ගන්න',
     btn_capture:'ගන්න', btn_cancel:'අවලංගු කරන්න', err_cam:'කැමරා ප්‍රවේශය අවශ්‍යයි. කැමරා අවසරය ලබා දී නැවත උත්සාහ කරන්න.',
     photo_on_file:'ඡායාරූපය දැනටමත් ඇත. වෙනස් වී ඇත්නම් පමණක් නව එකක් ගන්න.', photo_new:'නව ඡායාරූපය මෙම ඇගයීම සමඟ සුරැකේ.',
-    h_model:'මාදිලිය', btn_start:'ඇගයීම අරඹන්න', checking:'පරීක්ෂා කරමින්…',
-    found_title:'හමු විය', found_basic:'මූලික විභාගය', found_skd:'SKD සියලු මාදිලි', found_none:'පෙර වාර්තාවක් නැත. පහත සේවක විස්තර ඇතුළත් කරන්න.',
+    h_model:'මාදිලිය', btn_start:'ඇගයීම අරඹන්න', checking:'පරීක්ෂා කරමින්…', lbl_stations:'ඇගයීමට ලක්වන වැඩපොළවල්',
+    tpl_areas:'ක්‍රමය: ප්‍රධාන ක්ෂේත්‍ර 19 (SKD එකලස් කිරීමේ පත්‍රය).', tpl_stations:'ක්‍රමය: වැඩපොළ ඇගයීම (වැඩපොළවල් {n}). මෙම සේවකයා වැඩ කරන වැඩපොළ(ය) තෝරන්න.',
+    err_stations:'අවම වශයෙන් එක් වැඩපොළක් තෝරන්න.', acts:'ක්‍රියාකාරකම්',
+    found_title:'හමු විය', found_basic:'මූලික විභාගය', found_skd:'සමස්ත කුසලතාව', found_none:'පෙර වාර්තාවක් නැත. පහත සේවක විස්තර ඇතුළත් කරන්න.',
     found_models_done:'දැනටමත් ඇගයූ මාදිලි', model_note:'{date} දින දැනටමත් ඇගයීම කර ඇත ({pct}%, {level}). නැවත සුරැකීමෙන් කුසලතා සටහනේ මෙම මාදිලියේ ලකුණු ප්‍රතිස්ථාපනය වේ.',
     err_assessor:'ඇගයීම්කරු ලෙස ඔබගේ නම ඇතුළත් කරන්න.', err_pin:'ඇගයීම්කරු PIN අංකය ඇතුළත් කරන්න.', err_id:'සේවකයාගේ හැඳුනුම් අංකය ඇතුළත් කරන්න.',
     err_emp:'සේවකයාගේ නම සහ දුරකථන අංකය ඇතුළත් කරන්න.', err_model:'ඇගයීමට ලක්වන මාදිලිය තෝරන්න.',
     err_photo:'සේවකයාගේ ඡායාරූපයක් ගන්න.', err_find_first:'ඉහත සේවක වාර්තාව පරීක්ෂා කර, නැවත "ඇගයීම අරඹන්න" ඔබන්න.',
-    areas:'ක්ෂේත්‍ර', assess_help:'සෑම නිර්ණායකයක්ම Pass හෝ Fail ලෙස සලකුණු කරන්න. නිර්ණායක 5ම සමත් වුවහොත් පමණක් ක්ෂේත්‍රය කුසලතා ලෙස ගණන් ගැනේ. මෙම මාදිලියට අදාළ නොවේ නම් N/A භාවිතා කරන්න. N/A ක්ෂේත්‍ර % ගණනයට ඇතුළත් නොවේ.',
-    st_todo:'කළ යුතුයි', st_ok:'කුසලතා ඇත', st_no:'තවම නැත', st_na:'N/A', btn_pass:'Pass', btn_fail:'Fail', btn_allpass:'සියල්ල Pass', btn_na:'මෙම මාදිලියට N/A',
+    areas:'අයිතම', assess_help:'සෑම නිර්ණායකයක්ම Pass හෝ Fail ලෙස සලකුණු කරන්න. නිර්ණායක 5ම සමත් වුවහොත් පමණක් ක්ෂේත්‍රය හෝ ක්‍රියාකාරකම කුසලතා ලෙස ගණන් ගැනේ. අදාළ නොවේ නම් N/A භාවිතා කරන්න. N/A අයිතම % ගණනයට ඇතුළත් නොවේ.',
+    st_todo:'කළ යුතුයි', st_ok:'කුසලතා ඇත', st_no:'තවම නැත', st_na:'N/A', btn_pass:'Pass', btn_fail:'Fail', btn_allpass:'සියල්ල Pass', btn_na:'N/A',
     lbl_remarks:'සටහන් (අත්‍යවශ්‍ය නොවේ)', btn_review:'ප්‍රතිඵලය බලන්න', btn_back_details:'විස්තර වෙත ආපසු',
     rv_title:'සුරැකීමට පෙර පරීක්ෂා කරන්න', rv_desc:'ප්‍රතිඵලය පරීක්ෂා කරන්න. සුරැකූ පසු එය කුසලතා සටහනට එක් වේ.',
     skilled_of:'{a} න් {s} ක් කුසලතා', m_employee:'සේවකයා', m_model:'මාදිලිය', m_assessor:'ඇගයීම්කරු', m_na:'අදාළ නොවන ක්ෂේත්‍ර', none:'නැත',
@@ -526,7 +543,7 @@ const T = {
     btn_save:'ඇගයීම සුරකින්න', btn_back_edit:'සංස්කරණයට ආපසු', saving:'සුරකිමින්…', saving_desc:'කරුණාකර මෙම පිටුව විවෘතව තබන්න.',
     res_title:'ඇගයීම සුරැකිණි', res_desc:'{name} — {model}: {pct}% (ක්ෂේත්‍ර {a} න් {s}), {level}.',
     h_send:'ප්‍රතිඵලය සේවකයාට යවන්න', btn_wa:'WhatsApp මගින් යවන්න', btn_sms:'SMS මගින් යවන්න', no_phone:'දුරකථන අංකයක් ඇතුළත් කර නැති නිසා පණිවිඩය යැවිය නොහැක.',
-    h_matrix:'මෙම සේවකයාගේ කුසලතා සටහන', not_assessed:'ඇගයීම කර නැත', all_models:'සියලු මාදිලි',
+    h_matrix:'මෙම සේවකයාගේ කුසලතා සටහන', not_assessed:'ඇගයීම කර නැත', all_models:'සමස්ත (ඇගයූ මාර්ග)',
     btn_next_model:'එම සේවකයා වෙනත් මාදිලියකට ඇගයීම', btn_new_emp:'නව සේවකයෙක්',
     err_title:'සුරැකුණේ නැත', err_keep:'ඔබගේ ලකුණු තවමත් මෙම පිටුවේ ඇත.', btn_retry:'නැවත උත්සාහ කරන්න', btn_back_review:'පරීක්ෂාවට ආපසු',
     err_conn:'සේවාදායකයට සම්බන්ධ විය නොහැක. අන්තර්ජාල සම්බන්ධතාවය පරීක්ෂා කර නැවත උත්සාහ කරන්න.', err_server:'සේවාදායකය තහවුරු කළේ නැත. නැවත උත්සාහ කරන්න.',
@@ -582,7 +599,7 @@ let photoDataUrl = null;   // new photo taken on this page
 let stream = null;
 let lastResult = null;
 
-function freshMarks(){ return AREAS.map(a => ({ na:false, crit:a.crit.map(()=>null) })); }
+function freshMarks(){ return ITEMS.map(a => ({ na:false, crit:a.crit.map(()=>null) })); }
 function esc(s){
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -657,7 +674,7 @@ function renderFound(){
   const e = lookup.employee, b = lookup.basic;
   let lines = `<b>${esc(t('found_title'))}: ${esc(e.name)}</b>`;
   if(b) lines += `<br>${esc(t('found_basic'))}: ${b.pct}% · ${esc(b.category)} <span class="muted">(${esc(b.date)})</span>`;
-  if(lookup.allModelsPct!==null && lookup.allModelsPct!==undefined) lines += `<br>${esc(t('found_skd'))}: ${lookup.allModelsPct}%`;
+  if(lookup.overallPct!==null && lookup.overallPct!==undefined) lines += `<br>${esc(t('found_skd'))}: ${lookup.overallPct}%`;
   const done = Object.keys(lookup.models||{});
   if(done.length) lines += `<br>${esc(t('found_models_done'))}: ${esc(done.join(', '))}`;
   box.className = 'found-box';
@@ -668,18 +685,47 @@ function renderModels(){
   const grid = document.getElementById('model-grid');
   grid.innerHTML = '';
   const done = (lookup && lookup.models) || {};
-  MODELS.forEach(m=>{
-    const b = document.createElement('button');
-    const d = done[m];
-    b.className = 'model-btn' + (d ? ' done-'+levelKey(d.pct) : '') + (m===model ? ' active' : '');
-    b.innerHTML = esc(m) + (d ? `<small>✓ ${d.pct}% · ${esc(d.date)}</small>` : '');
-    b.onclick = ()=>{ model = m; renderModels(); };
-    grid.appendChild(b);
+  SPARK.lines.forEach(line=>{
+    const h = document.createElement('div');
+    h.className = 'line-head'; h.textContent = line.name;
+    grid.appendChild(h);
+    line.models.forEach(m=>{
+      const b = document.createElement('button');
+      const d = done[m];
+      b.className = 'model-btn' + (d ? ' done-'+levelKey(d.pct) : '') + (m===model ? ' active' : '');
+      b.innerHTML = esc(m) + (d ? `<small>✓ ${d.pct}% · ${esc(d.date)}</small>` : '');
+      b.onclick = ()=>{ if(m!==model){ model = m; stations = []; } renderModels(); };
+      grid.appendChild(b);
+    });
   });
   const note = document.getElementById('model-note');
   const d = model && done[model];
   note.classList.toggle('hidden', !d);
   if(d) note.textContent = t('model_note', { date:d.date, pct:d.pct, level:t('lv_'+levelKey(d.pct)) });
+  renderStations();
+}
+
+function renderStations(){
+  const tpl = model ? tplOf(model) : null;
+  const tn = document.getElementById('tpl-note'), box = document.getElementById('station-box');
+  tn.classList.toggle('hidden', !tpl);
+  box.classList.toggle('hidden', !tpl || tpl.kind!=='stations');
+  if(!tpl) return;
+  tn.textContent = tpl.kind==='areas' ? t('tpl_areas') : t('tpl_stations', { n:tpl.stations.length });
+  if(tpl.kind!=='stations') return;
+  const g = document.getElementById('station-grid');
+  g.innerHTML = '';
+  tpl.stations.forEach(st=>{
+    const b = document.createElement('button');
+    b.className = 'st-chip' + (stations.indexOf(st.code)!==-1 ? ' on' : '');
+    b.innerHTML = `${esc(st.code)} <small>· ${st.items.length}</small>`;
+    b.onclick = ()=>{
+      const k = stations.indexOf(st.code);
+      if(k===-1) stations.push(st.code); else stations.splice(k,1);
+      renderStations();
+    };
+    g.appendChild(b);
+  });
 }
 
 /* ---- photo (rear camera: the assessor photographs the employee) ---- */
@@ -763,13 +809,18 @@ async function startAssessment(){
   if(!emp.name || !emp.phone) return detailsError(t('err_emp'));
   if(!photoDataUrl && !photoOnFile()) return detailsError(t('err_photo'));
   if(!model) return detailsError(t('err_model'));
+  if(tplOf(model).kind==='stations' && !stations.length) return detailsError(t('err_stations'));
   detailsError('');
 
-  if(!inProgress){ marks = freshMarks(); openArea = 0; document.getElementById('in-remarks').value = ''; }
+  const key = model + '|' + stations.slice().sort().join(',');
+  if(!inProgress || key !== marksKey){
+    ITEMS = buildItems(); marksKey = key;
+    marks = freshMarks(); openArea = 0; document.getElementById('in-remarks').value = '';
+  }
   inProgress = true;
   document.getElementById('hud-avatar-wrap').innerHTML = avatarHtml(photoDataUrl || photoOnFile(), emp.name);
   document.getElementById('hud-who').textContent = emp.name + ' · ' + emp.idNumber;
-  document.getElementById('hud-model').textContent = model;
+  document.getElementById('hud-model').textContent = model + (stations.length ? ' · ' + stations.join(', ') : '');
   renderAreas();
   show('step-assess');
 }
@@ -787,8 +838,16 @@ function areaStatus(a){
 function renderAreas(){
   const wrap = document.getElementById('areas');
   wrap.innerHTML = '';
-  AREAS.forEach((area, a)=>{
+  let lastStation = null;
+  ITEMS.forEach((area, a)=>{
     const st = areaStatus(a);
+    if(area.station && area.station !== lastStation){
+      lastStation = area.station;
+      const gh = document.createElement('div');
+      gh.className = 'group-head';
+      gh.textContent = area.station + ' · ' + ITEMS.filter(x=>x.station===area.station).length + ' ' + t('acts');
+      wrap.appendChild(gh);
+    }
     const card = document.createElement('div');
     card.className = 'area' + (a===openArea ? ' open' : '') + (marks[a].na ? ' is-na' : '');
     card.id = 'area-'+a;
@@ -801,7 +860,7 @@ function renderAreas(){
     });
     card.innerHTML =
       `<button class="area-head" onclick="toggleArea(${a})">`+
-        `<span class="area-no">${a+1}</span><span class="area-name">${esc(area.name)}</span>`+
+        `<span class="area-no">${esc(area.no)}</span><span class="area-name">${esc(area.name)}</span>`+
         `<span class="badge ${st}">${esc(t('st_'+st))}</span></button>`+
       `<div class="area-body">${critHtml}`+
         `<div class="area-tools">`+
@@ -817,7 +876,7 @@ function updateHud(){
   const ticks = document.getElementById('ticks');
   ticks.innerHTML = '';
   let done = 0;
-  AREAS.forEach((_, a)=>{
+  ITEMS.forEach((_, a)=>{
     const st = areaStatus(a);
     if(st!=='todo') done++;
     const tk = document.createElement('div');
@@ -825,8 +884,8 @@ function updateHud(){
     ticks.appendChild(tk);
   });
   document.getElementById('hud-done').textContent = done;
-  document.getElementById('hud-total').textContent = AREAS.length;
-  document.getElementById('btn-review').disabled = done < AREAS.length;
+  document.getElementById('hud-total').textContent = ITEMS.length;
+  document.getElementById('btn-review').disabled = done < ITEMS.length;
 }
 
 function toggleArea(a){
@@ -843,8 +902,8 @@ function scrollToArea(a){
 // When an area becomes complete, move straight to the next unfinished one.
 function afterChange(a){
   if(areaStatus(a)!=='todo'){
-    const next = AREAS.findIndex((_, i)=> i>a && areaStatus(i)==='todo');
-    const first = AREAS.findIndex((_, i)=> areaStatus(i)==='todo');
+    const next = ITEMS.findIndex((_, i)=> i>a && areaStatus(i)==='todo');
+    const first = ITEMS.findIndex((_, i)=> areaStatus(i)==='todo');
     const target = next!==-1 ? next : first;
     openArea = target;
     renderAreas();
@@ -863,12 +922,12 @@ function toggleNA(a){ marks[a].na = !marks[a].na; afterChange(a); }
 function summary(){
   let applicable = 0, skilled = 0;
   const fails = [], na = [];
-  AREAS.forEach((area, a)=>{
+  ITEMS.forEach((area, a)=>{
     const st = areaStatus(a);
-    if(st==='na'){ na.push(area.name); return; }
+    if(st==='na'){ na.push(area.station ? area.station+' #'+area.no : area.name); return; }
     applicable++;
     if(st==='ok') skilled++;
-    else fails.push({ no:a+1, name:area.name, failed:area.crit.filter((_, i)=>marks[a].crit[i]===0) });
+    else fails.push({ no:(area.station ? area.station+' #' : '')+area.no, name:area.name, failed:area.crit.filter((_, i)=>marks[a].crit[i]===0) });
   });
   const pct = applicable ? Math.round(skilled/applicable*100) : 0;
   return { applicable, skilled, pct, fails, na };
@@ -934,7 +993,8 @@ async function submitAssessment(){
     employeeType: emp.empType,
     idNumber: emp.idNumber,
     model: model,
-    areas: marks,
+    stations: stations,
+    items: marks,
     remarks: document.getElementById('in-remarks').value.trim(),
     photoBase64: photoDataUrl || ''
   });
@@ -945,12 +1005,12 @@ async function submitAssessment(){
   }
   inProgress = false;
   const s = summary();
-  lastResult = { data:r.data, summary:s, emp:Object.assign({}, emp), model:model };
+  lastResult = { data:r.data, summary:s, emp:Object.assign({}, emp), model:model, stations:stations.slice() };
   // Keep the page's view of this employee current for the next model.
   if(lookup){
     lookup.models = lookup.models || {};
     lookup.models[model] = { pct:r.data.modelPct, date:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) };
-    lookup.allModelsPct = r.data.allModelsPct;
+    lookup.overallPct = r.data.overallPct;
     if(r.data.photo && lookup.employee) lookup.employee.photo = r.data.photo;
   }
   photoDataUrl = null;
@@ -962,14 +1022,15 @@ function sinhalaMessage(res){
   const d = res.data, s = res.summary;
   const lk = levelKey(d.modelPct);
   let msg = `ආයුබෝවන් ${res.emp.name},\n\n`+
-    `TVS Lanka හොරණ එකලස් කිරීමේ පිරියතේ SKD එකලස් කිරීමේ කුසලතා ඇගයීමේ ප්‍රතිඵලය:\n\n`+
-    `මාදිලිය: ${res.model}\n`+
-    `ලකුණු: ${d.modelPct}% (ක්ෂේත්‍ර ${d.applicable} න් ${d.skilled} ක් සමත්)\n`+
+    `TVS Lanka හොරණ එකලස් කිරීමේ පිරියතේ ${d.line || "SKD"} එකලස් කිරීමේ කුසලතා ඇගයීමේ ප්‍රතිඵලය:\n\n`+
+    `මාදිලිය: ${res.model}${res.stations.length ? ' (වැඩපොළ: '+res.stations.join(', ')+')' : ''}\n`+
+    `ලකුණු: ${d.modelPct}% (${d.applicable} න් ${d.skilled} ක් සමත්)\n`+
     `වත්මන් මට්ටම: ${LEVEL_SI[lk]}\n`+
-    `සියලු මාදිලි සඳහා සමස්ත කුසලතාව: ${d.allModelsPct}%\n\n`;
+    `සමස්ත කුසලතාව (ඇගයූ මාර්ග): ${d.overallPct}%\n\n`;
   if(s.fails.length){
     msg += `වැඩිදියුණු කළ යුතු ක්ෂේත්‍ර:\n` +
-      s.fails.map(f=>`• ${f.name} – ${f.failed.join(', ')}`).join('\n') +
+      s.fails.slice(0,12).map(f=>`• ${f.no}. ${f.name} – ${f.failed.join(', ')}`).join('\n') +
+      (s.fails.length>12 ? `\n• ... තවත් ${s.fails.length-12}` : '') +
       `\n\nමෙම ක්ෂේත්‍ර සඳහා පුහුණුව ලබා ගැනීමට ඔබේ අධීක්ෂක හමුවන්න.\n`;
   } else {
     msg += `අදාළ සියලුම ක්ෂේත්‍ර සමත්. ඉතා හොඳයි! දිගටම මෙලෙසම කටයුතු කරන්න.\n`;
@@ -1003,20 +1064,25 @@ function showResult(res){
   sms.href = num ? 'sms:+' + num + '?body=' + encodeURIComponent(msg) : '#';
 
   let html = '';
-  MODELS.forEach(m=>{
-    const v = d.matrix ? d.matrix[m] : null;
-    const cell = (v===null||v===undefined||v==='')
-      ? `<span class="muted">${esc(t('not_assessed'))}</span>`
-      : `<span class="pct-pill" style="background:${LEVEL_COLOR[levelKey(v)]};color:#fff">${v}%</span>`;
-    html += `<div class="meta-row"><span>${esc(m)}</span><span>${cell}</span></div>`;
+  SPARK.lines.forEach(line=>{
+    const done = line.models.filter(m => d.matrix && d.matrix[m]!==null && d.matrix[m]!==undefined);
+    if(!done.length && line.models.indexOf(res.model)===-1) return;   // only lines this employee works on
+    html += `<div class="group-head">${esc(line.name)}</div>`;
+    line.models.forEach(m=>{
+      const v = d.matrix ? d.matrix[m] : null;
+      const cell = (v===null||v===undefined||v==='')
+        ? `<span class="muted">${esc(t('not_assessed'))}</span>`
+        : `<span class="pct-pill" style="background:${LEVEL_COLOR[levelKey(v)]};color:#fff">${v}%</span>`;
+      html += `<div class="meta-row"><span>${esc(m)}</span><span>${cell}</span></div>`;
+    });
   });
-  html += `<div class="meta-row"><span><b>${esc(t('all_models'))}</b></span><span><b>${d.allModelsPct}%</b></span></div>`;
+  html += `<div class="meta-row"><span><b>${esc(t('all_models'))}</b></span><span><b>${d.overallPct}%</b></span></div>`;
   document.getElementById('res-matrix').innerHTML = html;
   show('step-result');
 }
 
 function sameEmployeeNextModel(){
-  model = '';
+  model = ''; stations = []; marksKey = '';
   marks = freshMarks();
   openArea = 0;
   document.getElementById('in-remarks').value = '';
@@ -1025,7 +1091,7 @@ function sameEmployeeNextModel(){
 }
 
 function newEmployee(){
-  model = '';
+  model = ''; stations = []; marksKey = '';
   marks = freshMarks();
   openArea = 0;
   emp = { name:'', phone:'', empType:'manpower', idNumber:'' };
