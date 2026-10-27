@@ -612,7 +612,7 @@ const SPARK = {
  "lines": [
   {
    "id": "SKD",
-   "name": "SKD",
+   "name": "2W SKD",
    "models": [
     "Sport 110",
     "Ntorq 125",
@@ -630,7 +630,7 @@ const SPARK = {
   },
   {
    "id": "CKD",
-   "name": "CKD",
+   "name": "2W CKD",
    "models": [
     "XL 100 i-Touch"
    ]

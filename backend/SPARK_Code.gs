@@ -258,8 +258,10 @@ function columnToLetter(col) {
  *                 5 criteria. Logged in "Workstation Assessments".
  * An item (area/activity) is SKILLED only if all 5 criteria pass; N/A items are
  * left out. Model % = skilled / applicable items.
- * Overall % = average over all models of every line the employee has been
- * assessed in (not-assessed models in those lines count 0 — the SKD Excel rule).
+ * Workstation models score CUMULATIVELY across sittings (see skdEmployees).
+ * FINAL % = average of all models in the employee's category line (2W SKD /
+ * 2W CKD / 3W), not-assessed models count 0. The category is set by the assessor
+ * and kept in the "Employees" tab.
  * Levels = basic exam bands: 90+ Advanced, 80-89 Intermediate, 70-79 Basic, <70 Not Qualified.
  * "SKD Skill Matrix" is REBUILT from the two logs on every save — don't edit it by hand.
  * Every action needs Script Property ASSESSOR_PIN: checkPin, lookup, submit, matrix.
@@ -875,7 +877,7 @@ const SPARK = {
  "lines": [
   {
    "id": "SKD",
-   "name": "SKD",
+   "name": "2W SKD",
    "models": [
     "Sport 110",
     "Ntorq 125",
@@ -893,7 +895,7 @@ const SPARK = {
   },
   {
    "id": "CKD",
-   "name": "CKD",
+   "name": "2W CKD",
    "models": [
     "XL 100 i-Touch"
    ]
@@ -935,8 +937,13 @@ const MODEL_LINE = {};
 SPARK.lines.forEach(l => l.models.forEach(m => { MODEL_LINE[m] = l.id; }));
 const SKD_AREAS = SPARK.templates.skd19.areas.map(a => [a.name, a.crit]);
 const SKD_FIRST_AREA_COL = 11; // K, in "SKD Assessments"
-const MATRIX_HEADERS = ['Employee Name', 'Employee Type', 'ID Number'].concat(ALL_MODELS)
-  .concat(['Overall %', 'Lines', 'Models Assessed', 'Last Assessed', 'Last Assessor', 'Phone', 'Photo Link']);
+const LINE_BY_ID = {};
+SPARK.lines.forEach(l => { LINE_BY_ID[l.id] = l; });
+const MATRIX_HEADERS = ['Employee Name', 'Employee Type', 'ID Number', 'Category'].concat(ALL_MODELS)
+  .concat(['Final %']).concat(SPARK.lines.map(l => l.name + ' %'))
+  .concat(['Models Assessed', 'Last Assessed', 'Last Assessor', 'Phone', 'Photo Link']);
+const EMP_SHEET = 'Employees';
+const EMP_HEADERS = ['ID Number', 'Employee Name', 'Employee Type', 'Category', 'Phone', 'Photo Link', 'Updated'];
 const TZ = 'Asia/Colombo';
 
 function skdReply(obj) {
@@ -1028,6 +1035,8 @@ function skdSubmit(data) {
   const name = String(data.name || '').trim();
   const phone = String(data.phone || '').trim().replace(/^'+/, '');
   if (!idNumber || !name) return skdReply({ status: 'error', message: 'Employee name and ID are required.' });
+  const category = String(data.category || '');
+  if (!LINE_BY_ID[category]) return skdReply({ status: 'error', message: 'Choose the employee category (2W SKD, 2W CKD or 3W).' });
 
   const sc = scoreItems(templateId, data);
   if (sc.error) return skdReply({ status: 'error', message: sc.error });
@@ -1051,13 +1060,19 @@ function skdSubmit(data) {
         sc.stations.join(', '), sc.applicable, sc.skilled, modelPct / 100, String(data.remarks || ''),
         sc.stationText.join('\n'), sc.failed.join('\n'), phone ? "'" + phone : '', photoUrl]);
     }
+    skdUpsertEmployee(ss, idNumber, name, empType, category, phone, goodPhoto(photoUrl));
     const emps = skdRebuildMatrix(ss);
     const e = emps[idNumber];
     const matrix = {};
     ALL_MODELS.forEach(m => { matrix[m] = e.models[m] ? e.models[m].pct : null; });
+    const lineScores = {};
+    Object.keys(e.lineScores).forEach(l => { lineScores[l] = e.lineScores[l].pct; });
+    const mm = e.models[model];
     return skdReply({
       status: 'success', model: model, line: MODEL_LINE[model], applicable: sc.applicable, skilled: sc.skilled,
-      modelPct: modelPct, overallPct: e.overallPct, matrix: matrix, photo: photoThumb(e.photoUrl)
+      sittingPct: modelPct, modelPct: mm.pct, stationsDone: mm.stationsDone || null, stationsTotal: mm.stationsTotal || null,
+      category: e.category, finalPct: e.finalPct, overallPct: e.finalPct, lineScores: lineScores,
+      matrix: matrix, photo: photoThumb(e.photoUrl)
     });
   } finally {
     lock.releaseLock();
@@ -1102,7 +1117,17 @@ function skdBasicResultsById(ss) {
   return out;
 }
 
-// Every assessment from both logs as {ts, assessor, name, empType, id, model, pct, phone, photo}.
+// "L-3: 9/10 (90%)\nTesting: N/A" -> {"L-3": {s:9, a:10}, "Testing": {s:0, a:0}}
+function parseStationText(txt) {
+  const out = {};
+  String(txt || '').split('\n').forEach(line => {
+    const m = line.match(/^(.+?):\s*(?:(\d+)\/(\d+)|N\/A)/);
+    if (m) out[m[1].trim()] = m[2] === undefined ? { s: 0, a: 0 } : { s: Number(m[2]), a: Number(m[3]) };
+  });
+  return out;
+}
+
+// Every assessment from both logs as {ts, assessor, name, empType, id, model, pct, phone, photo, stations}.
 function skdLogRows(ss) {
   const rows = [];
   const read = (sheetName, width, map) => {
@@ -1116,41 +1141,126 @@ function skdLogRows(ss) {
   };
   const nA = SKD_FIRST_AREA_COL - 1 + SKD_AREAS.length + 3;  // .. AD Failed, AE Phone, AF Photo
   read(SKD_ASSESS_SHEET, nA, (v, id) => ({ ts: v[0], assessor: String(v[1]), name: String(v[2]), empType: String(v[3]), id: id,
-    model: String(v[5]), pct: Math.round(Number(v[8]) * 100), phone: String(v[nA - 2] || '').replace(/^'+/, ''), photo: goodPhoto(v[nA - 1]) }));
+    model: String(v[5]), pct: Math.round(Number(v[8]) * 100), phone: String(v[nA - 2] || '').replace(/^'+/, ''), photo: goodPhoto(v[nA - 1]),
+    stations: null }));
   read(WS_ASSESS_SHEET, 16, (v, id) => ({ ts: v[0], assessor: String(v[1]), name: String(v[2]), empType: String(v[3]), id: id,
-    model: String(v[5]), pct: Math.round(Number(v[10]) * 100), phone: String(v[14] || '').replace(/^'+/, ''), photo: goodPhoto(v[15]) }));
+    model: String(v[5]), pct: Math.round(Number(v[10]) * 100), phone: String(v[14] || '').replace(/^'+/, ''), photo: goodPhoto(v[15]),
+    stations: parseStationText(v[12]) }));
   rows.sort((a, b) => a.ts - b.ts);
   return rows;
 }
 
-// {id: {id, name, empType, phone, photoUrl, models:{model:{pct,date}}, overallPct, lines, modelsAssessed, last, lastAssessor, basic}}
-// Includes basic-exam-only people (no models).
+// "Employees" tab: one row per ID with the category the assessor set (and latest name/phone/photo).
+function skdEmployeeRecords(ss) {
+  const out = {};
+  const sh = ss.getSheetByName(EMP_SHEET);
+  if (!sh || sh.getLastRow() < 2) return out;
+  sh.getRange(2, 1, sh.getLastRow() - 1, EMP_HEADERS.length).getValues().forEach((v, i) => {
+    const id = normId(v[0]);
+    if (id) out[id] = { row: i + 2, name: String(v[1] || ''), empType: String(v[2] || ''), category: String(v[3] || ''),
+                        phone: String(v[4] || '').replace(/^'+/, ''), photoUrl: goodPhoto(v[5]) };
+  });
+  return out;
+}
+
+/*
+ * SCORING (user decisions 2026-10-27):
+ *  - 19-area models: model % = latest assessment's skilled / applicable areas.
+ *  - Workstation models: CUMULATIVE. Each workstation keeps its latest result, across separate sittings.
+ *    Model % = skilled activities / (applicable activities of assessed stations + ALL activities of
+ *    not-yet-assessed stations). One station of eleven can no longer give 100% for the model.
+ *  - Line score = average of ALL models in the line (not-assessed models count 0).
+ *  - FINAL score = line score of the employee's CATEGORY (2W SKD / 2W CKD / 3W), set by the assessor.
+ *    Without a category on file, the line with the most assessed models is used.
+ */
 function skdEmployees(ss) {
   const basic = skdBasicResultsById(ss);
+  const recs = skdEmployeeRecords(ss);
   const emps = {};
   skdLogRows(ss).forEach(r => {
     if (!MODEL_LINE[r.model]) return;            // models no longer in the list (e.g. old single "RTR") are ignored
-    const e = emps[r.id] || (emps[r.id] = { id: r.id, models: {}, phone: '', photoUrl: '' });
+    const e = emps[r.id] || (emps[r.id] = { id: r.id, models: {}, st: {}, phone: '', photoUrl: '' });
     e.name = r.name; e.empType = r.empType; e.last = r.ts; e.lastAssessor = r.assessor;
     if (r.phone) e.phone = r.phone;
     if (r.photo) e.photoUrl = r.photo;
-    e.models[r.model] = { pct: r.pct, date: fmtDate(r.ts) };
+    if (r.stations) {
+      const st = e.st[r.model] || (e.st[r.model] = {});
+      Object.keys(r.stations).forEach(c => { st[c] = { s: r.stations[c].s, a: r.stations[c].a, date: r.ts }; });
+      e.models[r.model] = { date: fmtDate(r.ts) };          // pct filled in below
+    } else {
+      e.models[r.model] = { pct: r.pct, date: fmtDate(r.ts) };
+    }
   });
+
   Object.keys(emps).forEach(id => {
     const e = emps[id];
-    const lines = SPARK.lines.filter(l => l.models.some(m => e.models[m]));
-    let sum = 0, n = 0;
-    lines.forEach(l => l.models.forEach(m => { n++; if (e.models[m]) sum += e.models[m].pct; }));
-    e.overallPct = n ? Math.round(sum / n) : null;
-    e.lines = lines.map(l => l.id);
+    // cumulative workstation models
+    Object.keys(e.st).forEach(model => {
+      const tpl = SPARK.templates[SPARK.modelTemplate[model]];
+      const done = e.st[model];
+      let skilled = 0, denom = 0, stationsDone = 0;
+      const stations = {};
+      tpl.stations.forEach(s => {
+        const d = done[s.code];
+        if (d) {
+          stationsDone++;
+          skilled += d.s; denom += d.a;                    // a = 0 -> whole station N/A, left out
+          stations[s.code] = { pct: d.a ? Math.round(d.s / d.a * 100) : null, date: fmtDate(d.date) };
+        } else {
+          denom += s.items.length;                         // not assessed yet = counts as 0
+        }
+      });
+      const m = e.models[model];
+      m.pct = denom ? Math.round(skilled / denom * 100) : 0;
+      m.stationsDone = stationsDone;
+      m.stationsTotal = tpl.stations.length;
+      m.stations = stations;
+    });
     e.modelsAssessed = Object.keys(e.models).length;
   });
+
+  // basic-exam-only people
   Object.keys(basic).forEach(id => {
     const b = basic[id];
-    const e = emps[id] || (emps[id] = { id: id, name: b.name, empType: b.empType, models: {}, overallPct: null, lines: [], modelsAssessed: 0, phone: '', photoUrl: '' });
+    const e = emps[id] || (emps[id] = { id: id, name: b.name, empType: b.empType, models: {}, st: {}, modelsAssessed: 0, phone: '', photoUrl: '' });
     if (!e.phone) e.phone = b.phone;
     if (!e.photoUrl) e.photoUrl = b.photoUrl;
     e.basic = { pct: b.pct, score: b.score, total: b.total, category: b.category, date: b.date };
+  });
+
+  // categories set by assessors (also people registered before any assessment)
+  Object.keys(recs).forEach(id => {
+    const r = recs[id];
+    const e = emps[id] || (emps[id] = { id: id, name: r.name, empType: r.empType, models: {}, st: {}, modelsAssessed: 0, phone: '', photoUrl: '' });
+    e.category = r.category;
+    if (r.name) e.name = r.name;
+    if (r.empType) e.empType = r.empType;
+    if (r.phone) e.phone = r.phone;
+    if (r.photoUrl) e.photoUrl = r.photoUrl;
+  });
+
+  // line scores + final score
+  Object.keys(emps).forEach(id => {
+    const e = emps[id];
+    e.lineScores = {};
+    e.lines = [];
+    SPARK.lines.forEach(l => {
+      const n = l.models.filter(m => e.models[m]).length;
+      if (!n && e.category !== l.id) return;
+      if (n) e.lines.push(l.id);
+      const sum = l.models.reduce((acc, m) => acc + (e.models[m] ? e.models[m].pct : 0), 0);
+      e.lineScores[l.id] = { pct: Math.round(sum / l.models.length), modelsDone: n, models: l.models.length };
+    });
+    if (!LINE_BY_ID[e.category]) {
+      let best = null;
+      e.lines.forEach(lid => { if (!best || e.lineScores[lid].modelsDone > e.lineScores[best].modelsDone) best = lid; });
+      e.category = best || '';
+      e.categorySet = false;
+    } else {
+      e.categorySet = true;
+    }
+    e.finalPct = e.category && e.lineScores[e.category] && e.modelsAssessed ? e.lineScores[e.category].pct : null;
+    e.overallPct = e.finalPct;    // older field name, kept for compatibility
   });
   return emps;
 }
@@ -1159,11 +1269,11 @@ function skdEmployees(ss) {
 function skdLookup(idNumber) {
   if (!idNumber) return skdReply({ status: 'error', message: 'Enter the ID number first.' });
   const e = skdEmployees(SpreadsheetApp.openById(SHEET_ID))[idNumber];
-  if (!e) return skdReply({ status: 'success', found: false, employee: null, models: {}, overallPct: null, basic: null });
+  if (!e) return skdReply({ status: 'success', found: false, employee: null, models: {}, finalPct: null, overallPct: null, basic: null });
   return skdReply({
     status: 'success', found: true,
-    employee: { name: e.name, empType: e.empType, phone: e.phone, photo: photoThumb(e.photoUrl) },
-    models: e.models, overallPct: e.overallPct, basic: e.basic || null
+    employee: { name: e.name, empType: e.empType, phone: e.phone, photo: photoThumb(e.photoUrl), category: e.categorySet ? e.category : '' },
+    models: e.models, lineScores: e.lineScores, category: e.category, finalPct: e.finalPct, overallPct: e.finalPct, basic: e.basic || null
   });
 }
 
@@ -1171,29 +1281,58 @@ function skdAllEmployees() {
   const emps = skdEmployees(SpreadsheetApp.openById(SHEET_ID));
   return Object.keys(emps).map(id => {
     const e = emps[id];
-    const models = {};
-    Object.keys(e.models).forEach(m => { models[m] = e.models[m].pct; });
+    const models = {}, coverage = {};
+    Object.keys(e.models).forEach(m => {
+      models[m] = e.models[m].pct;
+      if (e.models[m].stationsTotal) coverage[m] = e.models[m].stationsDone + '/' + e.models[m].stationsTotal;
+    });
+    const lineScores = {};
+    Object.keys(e.lineScores).forEach(l => { lineScores[l] = e.lineScores[l].pct; });
     return { id: e.id, name: e.name, empType: e.empType, phone: e.phone, photo: photoThumb(e.photoUrl),
-             models: models, overallPct: e.overallPct, lines: e.lines, modelsAssessed: e.modelsAssessed,
+             category: e.category, categorySet: e.categorySet, models: models, coverage: coverage, lineScores: lineScores,
+             finalPct: e.finalPct, overallPct: e.finalPct, lines: e.lines, modelsAssessed: e.modelsAssessed,
              lastAssessed: e.last ? fmtDate(e.last) : '', basic: e.basic || null };
   });
 }
 
 /* ---------- sheets ---------- */
+function empSheet(ss) {
+  let sh = ss.getSheetByName(EMP_SHEET);
+  if (sh && sh.getLastRow() > 0) { skdEnsureHeaders(sh, EMP_HEADERS); return sh; }
+  if (!sh) sh = ss.insertSheet(EMP_SHEET);
+  sh.appendRow(EMP_HEADERS);
+  sh.setFrozenRows(1);
+  sh.getRange(1, 1, 1, EMP_HEADERS.length).setFontWeight('bold');
+  return sh;
+}
+
+// Creates or updates this employee's row in "Employees" (category, name, type, phone, photo).
+function skdUpsertEmployee(ss, id, name, empType, category, phone, photoUrl) {
+  const sh = empSheet(ss);
+  const recs = skdEmployeeRecords(ss);
+  const cur = recs[id];
+  const row = [id, name, empType, category,
+               (phone || (cur && cur.phone)) ? "'" + (phone || cur.phone) : '',
+               photoUrl || (cur && cur.photoUrl) || '', new Date()];
+  if (cur) sh.getRange(cur.row, 1, 1, row.length).setValues([row]);
+  else sh.appendRow(row);
+}
+
 // Rewrites "SKD Skill Matrix" from the logs (one row per assessed employee). Returns the employees map.
 function skdRebuildMatrix(ss) {
   const emps = skdEmployees(ss);
   let sh = ss.getSheetByName(SKD_MATRIX_SHEET) || ss.insertSheet(SKD_MATRIX_SHEET);
   const W = MATRIX_HEADERS.length;
+  const pctStart = 5, pctCount = ALL_MODELS.length + 1 + SPARK.lines.length;   // models, Final %, line %s
   const cur = sh.getLastRow() > 0 ? sh.getRange(1, 1, 1, Math.max(W, sh.getLastColumn())).getValues()[0] : [];
   const headerOk = MATRIX_HEADERS.every((h, i) => cur[i] === h) && cur.length === W;
   if (!headerOk) {
     sh.clear();
     sh.getRange(1, 1, 1, W).setValues([MATRIX_HEADERS]).setFontWeight('bold').setWrap(true);
     sh.setFrozenRows(1);
-    sh.setFrozenColumns(3);
-    const pctCols = sh.getRange(2, 4, 999, ALL_MODELS.length + 1);
-    const c = 'D2';   // ISNUMBER keeps not-assessed (blank) models uncoloured
+    sh.setFrozenColumns(4);
+    const pctCols = sh.getRange(2, pctStart, 999, pctCount);
+    const c = 'E2';   // ISNUMBER keeps not-assessed (blank) models uncoloured
     sh.setConditionalFormatRules([
       SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied('=AND(ISNUMBER(' + c + '),' + c + '>=0.9)').setBackground('#b7e1b9').setRanges([pctCols]).build(),
       SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied('=AND(ISNUMBER(' + c + '),' + c + '>=0.8,' + c + '<0.9)').setBackground('#d9ead3').setRanges([pctCols]).build(),
@@ -1204,14 +1343,15 @@ function skdRebuildMatrix(ss) {
     sh.getRange(2, 1, sh.getLastRow() - 1, W).clearContent();
   }
   const rows = Object.keys(emps).map(id => emps[id]).filter(e => e.modelsAssessed > 0)
-    .sort((a, b) => (b.overallPct || 0) - (a.overallPct || 0))
-    .map(e => [e.name, e.empType, e.id]
+    .sort((a, b) => (b.finalPct || 0) - (a.finalPct || 0))
+    .map(e => [e.name, e.empType, e.id, LINE_BY_ID[e.category] ? LINE_BY_ID[e.category].name : '']
       .concat(ALL_MODELS.map(m => e.models[m] ? e.models[m].pct / 100 : ''))
-      .concat([e.overallPct / 100, e.lines.join(', '), e.modelsAssessed, e.last, e.lastAssessor,
-               e.phone ? "'" + e.phone : '', e.photoUrl]));
+      .concat([e.finalPct === null ? '' : e.finalPct / 100])
+      .concat(SPARK.lines.map(l => e.lineScores[l.id] ? e.lineScores[l.id].pct / 100 : ''))
+      .concat([e.modelsAssessed, e.last, e.lastAssessor, e.phone ? "'" + e.phone : '', e.photoUrl]));
   if (rows.length) {
     sh.getRange(2, 1, rows.length, W).setValues(rows);
-    sh.getRange(2, 4, rows.length, ALL_MODELS.length + 1).setNumberFormat('0%');
+    sh.getRange(2, pctStart, rows.length, pctCount).setNumberFormat('0%');
   }
   return emps;
 }
@@ -1297,7 +1437,7 @@ function sendSkillEvalReminder(recipients) {
     if (e.modelsAssessed > 0) {
       assessedCount++;
       const days = (e.last instanceof Date) ? Math.floor((now - e.last) / 86400000) : 9999;
-      if (days >= OVERDUE_DAYS) overdue.push([e.name, e.id, e.lines.join(', '), fmtDate(e.last), e.overallPct + '%']);
+      if (days >= OVERDUE_DAYS) overdue.push([e.name, e.id, LINE_BY_ID[e.category] ? LINE_BY_ID[e.category].name : '', fmtDate(e.last), e.finalPct + '%']);
     } else if (e.basic) {
       neverAssessed.push([e.name, e.id, e.basic.pct + '% ' + e.basic.category, e.basic.date]);
     }
@@ -1325,7 +1465,7 @@ function sendSkillEvalReminder(recipients) {
     '&nbsp;<a href="' + PORTAL_URL + 'matrix.html" style="color:#1565c0">Open the employee skill matrix</a> · ' +
     '<a href="' + PORTAL_URL + 'home.html" style="color:#1565c0">SPARK home</a></p>' +
     '<h3>Due for re-assessment (last assessed 6+ months ago)</h3>' +
-    table(['Employee', 'ID', 'Lines', 'Last assessed', 'Overall'], overdue) +
+    table(['Employee', 'ID', 'Category', 'Last assessed', 'Final score'], overdue) +
     '<h3>Basic exam done, not yet skill-assessed</h3>' +
     table(['Name', 'ID', 'Basic exam', 'Exam date'], neverAssessed) +
     '<p style="color:#5b6670;font-size:12px;margin-top:20px">Sent automatically by SPARK on 1 January and 1 July. ' +

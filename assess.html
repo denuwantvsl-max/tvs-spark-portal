@@ -305,6 +305,9 @@
         <div class="radio-opt" id="opt-company" onclick="setEmpType('company')" data-t="lbl_company">Company</div>
       </div>
 
+      <label data-t="lbl_category">Category</label>
+      <div class="radio-row" id="cat-row"></div>
+
       <label for="in-id" id="lbl-id">NIC number</label>
       <div class="id-row">
         <input type="text" id="in-id" autocomplete="off" placeholder="200012345678" oninput="idChanged()">
@@ -488,7 +491,11 @@ const T = {
     link_matrix:'Employee skill matrix', link_home:'Home', compact:'Skill Assessment',
     det_title:'Assessment details', det_desc:'For supervisors and assessors. Assess one employee on one model at a time, by watching them work.',
     h_assessor:'Assessor', lbl_assessor:'Your name', lbl_pin:'Assessor PIN',
-    h_employee:'Employee', lbl_type:'Employment type', lbl_manpower:'Manpower', lbl_company:'Company',
+    h_employee:'Employee', lbl_type:'Employment type', lbl_manpower:'Manpower', lbl_company:'Company', lbl_category:'Category',
+    err_cat:'Choose the employee category (2W SKD, 2W CKD or 3W).', final_score:'Final score', this_assess:'This assessment',
+    model_score:'Model score', st_done:'{d} of {t} workstations',
+    model_note_ws:'Already assessed: {d} of {t} workstations, model score {pct}%. New workstations add to the score; re-assessing a workstation replaces only that workstation.',
+    res_desc2:'{name} — {model}. This assessment: {sit}% ({s} / {a}). Model score: {pct}%{cov}. Final score ({cat}): {final}%, {level}.',
     lbl_nic:'NIC number', lbl_epf:'EPF number', btn_find:'Find', lbl_name:'Full name', lbl_phone:'Phone number',
     h_photo:'Employee photo', cam_placeholder:'No photo yet', btn_open_cam:'Take photo', btn_retake_cam:'Take new photo',
     btn_capture:'Capture', btn_cancel:'Cancel', err_cam:'Camera access is needed. Allow camera permission and try again.',
@@ -496,7 +503,7 @@ const T = {
     h_model:'Model', btn_start:'Start assessment', checking:'Checking…', lbl_stations:'Workstations to assess',
     tpl_areas:'Method: 19 key areas (SKD Assembly sheet).', tpl_stations:'Method: workstation evaluation ({n} workstations). Choose the station(s) this employee works on.',
     err_stations:'Choose at least one workstation.', acts:'activities',
-    found_title:'Found', found_basic:'Basic exam', found_skd:'Overall skill', found_none:'No previous record. Enter the employee details below.',
+    found_title:'Found', found_basic:'Basic exam', found_skd:'Final score', found_none:'No previous record. Enter the employee details below.',
     found_models_done:'Already assessed on', model_note:'Already assessed on {date} ({pct}%, {level}). Saving again replaces this model\'s score in the skill matrix.',
     err_assessor:'Enter your name as the assessor.', err_pin:'Enter the assessor PIN.', err_id:'Enter the employee ID number.',
     err_emp:'Enter the employee name and phone number.', err_model:'Choose the model being assessed.',
@@ -510,7 +517,7 @@ const T = {
     btn_save:'Save assessment', btn_back_edit:'Back to edit', saving:'Saving…', saving_desc:'Please keep this page open.',
     res_title:'Assessment saved', res_desc:'{name} — {model}: {pct}% ({s} / {a} items), {level}.',
     h_send:'Send result to employee', btn_wa:'Send on WhatsApp', btn_sms:'Send by SMS', no_phone:'No phone number entered, so the message can\'t be sent.',
-    h_matrix:'Skill matrix for this employee', not_assessed:'Not assessed', all_models:'Overall (assessed lines)',
+    h_matrix:'Skill matrix for this employee', not_assessed:'Not assessed', all_models:'Final score',
     btn_next_model:'Assess same employee on another model', btn_new_emp:'New employee',
     err_title:'Not saved', err_keep:'Your marks are still on this page.', btn_retry:'Try again', btn_back_review:'Back to review',
     err_conn:'No connection to the server. Check the internet connection and try again.', err_server:'The server did not confirm. Try again.',
@@ -521,7 +528,11 @@ const T = {
     link_matrix:'සේවක කුසලතා සටහන', link_home:'මුල් පිටුව', compact:'කුසලතා ඇගයීම',
     det_title:'ඇගයීමේ විස්තර', det_desc:'අධීක්ෂකවරුන් සහ ඇගයීම්කරුවන් සඳහා. සේවකයා වැඩ කරන අයුරු නිරීක්ෂණය කර, වරකට එක් මාදිලියක් සඳහා ඇගයීම කරන්න.',
     h_assessor:'ඇගයීම්කරු', lbl_assessor:'ඔබගේ නම', lbl_pin:'ඇගයීම්කරු PIN අංකය',
-    h_employee:'සේවකයා', lbl_type:'රැකියා වර්ගය', lbl_manpower:'Manpower', lbl_company:'Company',
+    h_employee:'සේවකයා', lbl_type:'රැකියා වර්ගය', lbl_manpower:'Manpower', lbl_company:'Company', lbl_category:'කාණ්ඩය',
+    err_cat:'සේවක කාණ්ඩය තෝරන්න (2W SKD, 2W CKD හෝ 3W).', final_score:'අවසාන ලකුණු', this_assess:'මෙම ඇගයීම',
+    model_score:'මාදිලියේ ලකුණු', st_done:'වැඩපොළවල් {t} න් {d}',
+    model_note_ws:'දැනටමත් ඇගයූ: වැඩපොළවල් {t} න් {d}, මාදිලියේ ලකුණු {pct}%. නව වැඩපොළවල් ලකුණුවලට එකතු වේ; වැඩපොළක් නැවත ඇගයීමෙන් එම වැඩපොළ පමණක් ප්‍රතිස්ථාපනය වේ.',
+    res_desc2:'{name} — {model}. මෙම ඇගයීම: {sit}% ({a} න් {s}). මාදිලියේ ලකුණු: {pct}%{cov}. අවසාන ලකුණු ({cat}): {final}%, {level}.',
     lbl_nic:'ජාතික හැඳුනුම්පත් අංකය', lbl_epf:'EPF අංකය', btn_find:'සොයන්න', lbl_name:'සම්පූර්ණ නම', lbl_phone:'දුරකථන අංකය',
     h_photo:'සේවකයාගේ ඡායාරූපය', cam_placeholder:'තවම ඡායාරූපයක් නැත', btn_open_cam:'ඡායාරූපයක් ගන්න', btn_retake_cam:'නව ඡායාරූපයක් ගන්න',
     btn_capture:'ගන්න', btn_cancel:'අවලංගු කරන්න', err_cam:'කැමරා ප්‍රවේශය අවශ්‍යයි. කැමරා අවසරය ලබා දී නැවත උත්සාහ කරන්න.',
@@ -529,7 +540,7 @@ const T = {
     h_model:'මාදිලිය', btn_start:'ඇගයීම අරඹන්න', checking:'පරීක්ෂා කරමින්…', lbl_stations:'ඇගයීමට ලක්වන වැඩපොළවල්',
     tpl_areas:'ක්‍රමය: ප්‍රධාන ක්ෂේත්‍ර 19 (SKD එකලස් කිරීමේ පත්‍රය).', tpl_stations:'ක්‍රමය: වැඩපොළ ඇගයීම (වැඩපොළවල් {n}). මෙම සේවකයා වැඩ කරන වැඩපොළ(ය) තෝරන්න.',
     err_stations:'අවම වශයෙන් එක් වැඩපොළක් තෝරන්න.', acts:'ක්‍රියාකාරකම්',
-    found_title:'හමු විය', found_basic:'මූලික විභාගය', found_skd:'සමස්ත කුසලතාව', found_none:'පෙර වාර්තාවක් නැත. පහත සේවක විස්තර ඇතුළත් කරන්න.',
+    found_title:'හමු විය', found_basic:'මූලික විභාගය', found_skd:'අවසාන ලකුණු', found_none:'පෙර වාර්තාවක් නැත. පහත සේවක විස්තර ඇතුළත් කරන්න.',
     found_models_done:'දැනටමත් ඇගයූ මාදිලි', model_note:'{date} දින දැනටමත් ඇගයීම කර ඇත ({pct}%, {level}). නැවත සුරැකීමෙන් කුසලතා සටහනේ මෙම මාදිලියේ ලකුණු ප්‍රතිස්ථාපනය වේ.',
     err_assessor:'ඇගයීම්කරු ලෙස ඔබගේ නම ඇතුළත් කරන්න.', err_pin:'ඇගයීම්කරු PIN අංකය ඇතුළත් කරන්න.', err_id:'සේවකයාගේ හැඳුනුම් අංකය ඇතුළත් කරන්න.',
     err_emp:'සේවකයාගේ නම සහ දුරකථන අංකය ඇතුළත් කරන්න.', err_model:'ඇගයීමට ලක්වන මාදිලිය තෝරන්න.',
@@ -543,7 +554,7 @@ const T = {
     btn_save:'ඇගයීම සුරකින්න', btn_back_edit:'සංස්කරණයට ආපසු', saving:'සුරකිමින්…', saving_desc:'කරුණාකර මෙම පිටුව විවෘතව තබන්න.',
     res_title:'ඇගයීම සුරැකිණි', res_desc:'{name} — {model}: {pct}% (ක්ෂේත්‍ර {a} න් {s}), {level}.',
     h_send:'ප්‍රතිඵලය සේවකයාට යවන්න', btn_wa:'WhatsApp මගින් යවන්න', btn_sms:'SMS මගින් යවන්න', no_phone:'දුරකථන අංකයක් ඇතුළත් කර නැති නිසා පණිවිඩය යැවිය නොහැක.',
-    h_matrix:'මෙම සේවකයාගේ කුසලතා සටහන', not_assessed:'ඇගයීම කර නැත', all_models:'සමස්ත (ඇගයූ මාර්ග)',
+    h_matrix:'මෙම සේවකයාගේ කුසලතා සටහන', not_assessed:'ඇගයීම කර නැත', all_models:'අවසාන ලකුණු',
     btn_next_model:'එම සේවකයා වෙනත් මාදිලියකට ඇගයීම', btn_new_emp:'නව සේවකයෙක්',
     err_title:'සුරැකුණේ නැත', err_keep:'ඔබගේ ලකුණු තවමත් මෙම පිටුවේ ඇත.', btn_retry:'නැවත උත්සාහ කරන්න', btn_back_review:'පරීක්ෂාවට ආපසු',
     err_conn:'සේවාදායකයට සම්බන්ධ විය නොහැක. අන්තර්ජාල සම්බන්ධතාවය පරීක්ෂා කර නැවත උත්සාහ කරන්න.', err_server:'සේවාදායකය තහවුරු කළේ නැත. නැවත උත්සාහ කරන්න.',
@@ -563,6 +574,7 @@ function setLang(l){
   document.getElementById('lang-si').classList.toggle('active', l==='si');
   document.querySelectorAll('[data-t]').forEach(el=>{ el.textContent = t(el.getAttribute('data-t')); });
   updateIdLabel();
+  renderCategory();
   renderModels();
   renderFound();
   updatePhotoUI();
@@ -587,7 +599,19 @@ const LEVEL_SI = { adv:'උසස් (Advanced)', int:'මධ්‍යම (Inter
 /* =========================================================
    STATE
    ========================================================= */
-let emp = { name:'', phone:'', empType:'manpower', idNumber:'' };
+let emp = { name:'', phone:'', empType:'manpower', idNumber:'', category:'' };
+function lineName(id){ const l = SPARK.lines.find(x=>x.id===id); return l ? l.name : (id||''); }
+function renderCategory(){
+  const row = document.getElementById('cat-row');
+  row.innerHTML = '';
+  SPARK.lines.forEach(l=>{
+    const d = document.createElement('div');
+    d.className = 'radio-opt' + (emp.category===l.id ? ' active' : '');
+    d.textContent = l.name;
+    d.onclick = ()=>{ emp.category = l.id; renderCategory(); };
+    row.appendChild(d);
+  });
+}
 let assessor = { name:'', pin:'' };
 let model = '';
 let marks = [];         // marks[a] = { na:bool, crit:[null|1|0 x5] }
@@ -658,8 +682,11 @@ async function findEmployee(){
     if(!nameEl.value.trim()) nameEl.value = e.name || '';
     if(!phoneEl.value.trim()) phoneEl.value = String(e.phone||'').replace(/^'/,'');
     if(e.empType) setEmpType(e.empType.toLowerCase()==='company' ? 'company' : 'manpower');
+    if(e.category) emp.category = e.category;
+  } else {
+    emp.category = '';
   }
-  renderFound(); renderModels(); updatePhotoUI();
+  renderCategory(); renderFound(); renderModels(); updatePhotoUI();
   return true;
 }
 
@@ -674,7 +701,7 @@ function renderFound(){
   const e = lookup.employee, b = lookup.basic;
   let lines = `<b>${esc(t('found_title'))}: ${esc(e.name)}</b>`;
   if(b) lines += `<br>${esc(t('found_basic'))}: ${b.pct}% · ${esc(b.category)} <span class="muted">(${esc(b.date)})</span>`;
-  if(lookup.overallPct!==null && lookup.overallPct!==undefined) lines += `<br>${esc(t('found_skd'))}: ${lookup.overallPct}%`;
+  if(lookup.finalPct!==null && lookup.finalPct!==undefined) lines += `<br>${esc(t('found_skd'))} (${esc(lineName(lookup.category))}): ${lookup.finalPct}%`;
   const done = Object.keys(lookup.models||{});
   if(done.length) lines += `<br>${esc(t('found_models_done'))}: ${esc(done.join(', '))}`;
   box.className = 'found-box';
@@ -693,7 +720,7 @@ function renderModels(){
       const b = document.createElement('button');
       const d = done[m];
       b.className = 'model-btn' + (d ? ' done-'+levelKey(d.pct) : '') + (m===model ? ' active' : '');
-      b.innerHTML = esc(m) + (d ? `<small>✓ ${d.pct}% · ${esc(d.date)}</small>` : '');
+      b.innerHTML = esc(m) + (d ? `<small>✓ ${d.pct}%${d.stationsTotal ? ' · '+d.stationsDone+'/'+d.stationsTotal : ''} · ${esc(d.date)}</small>` : '');
       b.onclick = ()=>{ if(m!==model){ model = m; stations = []; } renderModels(); };
       grid.appendChild(b);
     });
@@ -701,7 +728,9 @@ function renderModels(){
   const note = document.getElementById('model-note');
   const d = model && done[model];
   note.classList.toggle('hidden', !d);
-  if(d) note.textContent = t('model_note', { date:d.date, pct:d.pct, level:t('lv_'+levelKey(d.pct)) });
+  if(d) note.textContent = d.stationsTotal
+    ? t('model_note_ws', { d:d.stationsDone, t:d.stationsTotal, pct:d.pct })
+    : t('model_note', { date:d.date, pct:d.pct, level:t('lv_'+levelKey(d.pct)) });
   renderStations();
 }
 
@@ -718,7 +747,8 @@ function renderStations(){
   tpl.stations.forEach(st=>{
     const b = document.createElement('button');
     b.className = 'st-chip' + (stations.indexOf(st.code)!==-1 ? ' on' : '');
-    b.innerHTML = `${esc(st.code)} <small>· ${st.items.length}</small>`;
+    const done = lookup && lookup.models && lookup.models[model] && lookup.models[model].stations && lookup.models[model].stations[st.code];
+    b.innerHTML = `${esc(st.code)} <small>· ${st.items.length}${done ? ' · ✓' + (done.pct===null ? 'N/A' : done.pct+'%') : ''}</small>`;
     b.onclick = ()=>{
       const k = stations.indexOf(st.code);
       if(k===-1) stations.push(st.code); else stations.splice(k,1);
@@ -807,6 +837,7 @@ async function startAssessment(){
   emp.name = document.getElementById('in-name').value.trim();
   emp.phone = document.getElementById('in-phone').value.trim();
   if(!emp.name || !emp.phone) return detailsError(t('err_emp'));
+  if(!emp.category) return detailsError(t('err_cat'));
   if(!photoDataUrl && !photoOnFile()) return detailsError(t('err_photo'));
   if(!model) return detailsError(t('err_model'));
   if(tplOf(model).kind==='stations' && !stations.length) return detailsError(t('err_stations'));
@@ -944,7 +975,7 @@ function goReview(){
   errA.classList.remove('show');
   const lk = levelKey(s.pct);
   document.getElementById('rv-pct').textContent = s.pct+'%';
-  document.getElementById('rv-count').textContent = t('skilled_of', {s:s.skilled, a:s.applicable});
+  document.getElementById('rv-count').textContent = t('this_assess') + ' · ' + t('skilled_of', {s:s.skilled, a:s.applicable});
   document.getElementById('rv-ring').style.borderColor = LEVEL_COLOR[lk];
   const lv = document.getElementById('rv-level');
   lv.textContent = t('lv_'+lk); lv.style.background = LEVEL_COLOR[lk];
@@ -991,6 +1022,7 @@ async function submitAssessment(){
     name: emp.name,
     phone: emp.phone,
     employeeType: emp.empType,
+    category: emp.category,
     idNumber: emp.idNumber,
     model: model,
     stations: stations,
@@ -1007,26 +1039,24 @@ async function submitAssessment(){
   const s = summary();
   lastResult = { data:r.data, summary:s, emp:Object.assign({}, emp), model:model, stations:stations.slice() };
   // Keep the page's view of this employee current for the next model.
-  if(lookup){
-    lookup.models = lookup.models || {};
-    lookup.models[model] = { pct:r.data.modelPct, date:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) };
-    lookup.overallPct = r.data.overallPct;
-    if(r.data.photo && lookup.employee) lookup.employee.photo = r.data.photo;
-  }
   photoDataUrl = null;
   showResult(lastResult);
+  // Refresh this employee's record (cumulative model scores, workstations done) for the next model.
+  post({ formType:'skd', action:'lookup', pin:assessor.pin, idNumber:emp.idNumber }).then(x=>{
+    if(x.ok){ lookup = x.data; lookupId = emp.idNumber; }
+  });
 }
 
 /* ---- message to the employee (always Sinhala) ---- */
 function sinhalaMessage(res){
   const d = res.data, s = res.summary;
-  const lk = levelKey(d.modelPct);
+  const lk = levelKey(d.modelPct), lf = levelKey(d.finalPct || 0);
   let msg = `ආයුබෝවන් ${res.emp.name},\n\n`+
     `TVS Lanka හොරණ එකලස් කිරීමේ පිරියතේ ${d.line || "SKD"} එකලස් කිරීමේ කුසලතා ඇගයීමේ ප්‍රතිඵලය:\n\n`+
     `මාදිලිය: ${res.model}${res.stations.length ? ' (වැඩපොළ: '+res.stations.join(', ')+')' : ''}\n`+
-    `ලකුණු: ${d.modelPct}% (${d.applicable} න් ${d.skilled} ක් සමත්)\n`+
-    `වත්මන් මට්ටම: ${LEVEL_SI[lk]}\n`+
-    `සමස්ත කුසලතාව (ඇගයූ මාර්ග): ${d.overallPct}%\n\n`;
+    `මෙම ඇගයීම: ${d.sittingPct}% (${d.applicable} න් ${d.skilled} ක් සමත්)\n`+
+    `මාදිලියේ ලකුණු: ${d.modelPct}%${d.stationsTotal ? ' (වැඩපොළවල් '+d.stationsTotal+' න් '+d.stationsDone+')' : ''} – ${LEVEL_SI[lk]}\n`+
+    `අවසාන ලකුණු (${lineName(d.category)}): ${d.finalPct}% – ${LEVEL_SI[lf]}\n\n`;
   if(s.fails.length){
     msg += `වැඩිදියුණු කළ යුතු ක්ෂේත්‍ර:\n` +
       s.fails.slice(0,12).map(f=>`• ${f.no}. ${f.name} – ${f.failed.join(', ')}`).join('\n') +
@@ -1050,9 +1080,10 @@ function intlPhone(p){
 
 function showResult(res){
   const d = res.data;
-  const lk = levelKey(d.modelPct);
   document.getElementById('res-desc').textContent =
-    t('res_desc', { name:res.emp.name, model:res.model, pct:d.modelPct, s:d.skilled, a:d.applicable, level:t('lv_'+lk) });
+    t('res_desc2', { name:res.emp.name, model:res.model, sit:d.sittingPct, s:d.skilled, a:d.applicable, pct:d.modelPct,
+      cov: d.stationsTotal ? ' (' + t('st_done', {d:d.stationsDone, t:d.stationsTotal}) + ')' : '',
+      cat:lineName(d.category), final:d.finalPct, level:t('lv_'+levelKey(d.finalPct || 0)) });
 
   const msg = sinhalaMessage(res);
   document.getElementById('msg-preview').textContent = msg;
@@ -1064,10 +1095,12 @@ function showResult(res){
   sms.href = num ? 'sms:+' + num + '?body=' + encodeURIComponent(msg) : '#';
 
   let html = '';
-  SPARK.lines.forEach(line=>{
+  // the employee's category line first, then any other line with results
+  SPARK.lines.slice().sort((a,b)=> (b.id===d.category) - (a.id===d.category)).forEach(line=>{
     const done = line.models.filter(m => d.matrix && d.matrix[m]!==null && d.matrix[m]!==undefined);
-    if(!done.length && line.models.indexOf(res.model)===-1) return;   // only lines this employee works on
-    html += `<div class="group-head">${esc(line.name)}</div>`;
+    if(!done.length && line.id!==d.category) return;
+    const ls = d.lineScores && d.lineScores[line.id];
+    html += `<div class="group-head">${esc(line.name)}${ls!==undefined ? ' · ' + ls + '%' : ''}${line.id===d.category ? ' · ' + esc(t('lbl_category')) : ''}</div>`;
     line.models.forEach(m=>{
       const v = d.matrix ? d.matrix[m] : null;
       const cell = (v===null||v===undefined||v==='')
@@ -1076,7 +1109,7 @@ function showResult(res){
       html += `<div class="meta-row"><span>${esc(m)}</span><span>${cell}</span></div>`;
     });
   });
-  html += `<div class="meta-row"><span><b>${esc(t('all_models'))}</b></span><span><b>${d.overallPct}%</b></span></div>`;
+  html += `<div class="meta-row"><span><b>${esc(t('all_models'))} (${esc(lineName(d.category))})</b></span><span><b>${d.finalPct}%</b></span></div>`;
   document.getElementById('res-matrix').innerHTML = html;
   show('step-result');
 }
@@ -1094,7 +1127,8 @@ function newEmployee(){
   model = ''; stations = []; marksKey = '';
   marks = freshMarks();
   openArea = 0;
-  emp = { name:'', phone:'', empType:'manpower', idNumber:'' };
+  emp = { name:'', phone:'', empType:'manpower', idNumber:'', category:'' };
+  renderCategory();
   lookup = null; lookupId = ''; photoDataUrl = null; lastResult = null;
   ['in-name','in-phone','in-id','in-remarks'].forEach(id=>document.getElementById(id).value = '');
   setEmpType('manpower');
