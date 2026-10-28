@@ -372,7 +372,7 @@
       <div class="ticks" id="ticks"></div>
     </div>
 
-    <p class="step-desc" data-t="assess_help">Mark each criterion Pass or Fail. An area counts as skilled only if all 5 criteria pass. Use N/A if the area doesn't apply to this model. N/A areas are left out of the %.</p>
+    <p class="step-desc" data-t="assess_help">Mark each criterion Pass or Fail, or use All pass / All fail. An area or activity counts as skilled only if all 5 criteria pass.</p>
 
     <div id="areas"></div>
 
@@ -404,7 +404,6 @@
       <div class="meta-row"><span>ID</span><span id="rv-id"></span></div>
       <div class="meta-row"><span data-t="m_model">Model</span><span id="rv-model"></span></div>
       <div class="meta-row"><span data-t="m_assessor">Assessor</span><span id="rv-assessor"></span></div>
-      <div class="meta-row"><span data-t="m_na">Areas not applicable</span><span id="rv-na"></span></div>
     </div>
 
     <div class="panel">
@@ -508,8 +507,8 @@ const T = {
     err_assessor:'Enter your name as the assessor.', err_pin:'Enter the assessor PIN.', err_id:'Enter the employee ID number.',
     err_emp:'Enter the employee name and phone number.', err_model:'Choose the model being assessed.',
     err_photo:'Take a photo of the employee.', err_find_first:'Check the employee record above, then tap Start again.',
-    areas:'items', assess_help:'Mark each criterion Pass or Fail. An area or activity counts as skilled only if all 5 criteria pass. Use N/A if it doesn\'t apply. N/A items are left out of the %.',
-    st_todo:'To do', st_ok:'Skilled', st_no:'Not yet', st_na:'N/A', btn_pass:'Pass', btn_fail:'Fail', btn_allpass:'All pass', btn_na:'N/A',
+    areas:'items', assess_help:'Mark each criterion Pass or Fail, or use All pass / All fail. An area or activity counts as skilled only if all 5 criteria pass.',
+    st_todo:'To do', st_ok:'Skilled', st_no:'Not yet', st_na:'N/A', btn_pass:'Pass', btn_fail:'Fail', btn_allpass:'All pass', btn_allfail:'All fail',
     lbl_remarks:'Remarks (optional)', btn_review:'Review result', btn_back_details:'Back to details',
     rv_title:'Review before saving', rv_desc:'Check the result. Once saved, it goes into the skill matrix.',
     skilled_of:'{s} / {a} skilled', m_employee:'Employee', m_model:'Model', m_assessor:'Assessor', m_na:'Areas not applicable', none:'None',
@@ -545,8 +544,8 @@ const T = {
     err_assessor:'ඇගයීම්කරු ලෙස ඔබගේ නම ඇතුළත් කරන්න.', err_pin:'ඇගයීම්කරු PIN අංකය ඇතුළත් කරන්න.', err_id:'සේවකයාගේ හැඳුනුම් අංකය ඇතුළත් කරන්න.',
     err_emp:'සේවකයාගේ නම සහ දුරකථන අංකය ඇතුළත් කරන්න.', err_model:'ඇගයීමට ලක්වන මාදිලිය තෝරන්න.',
     err_photo:'සේවකයාගේ ඡායාරූපයක් ගන්න.', err_find_first:'ඉහත සේවක වාර්තාව පරීක්ෂා කර, නැවත "ඇගයීම අරඹන්න" ඔබන්න.',
-    areas:'අයිතම', assess_help:'සෑම නිර්ණායකයක්ම Pass හෝ Fail ලෙස සලකුණු කරන්න. නිර්ණායක 5ම සමත් වුවහොත් පමණක් ක්ෂේත්‍රය හෝ ක්‍රියාකාරකම කුසලතා ලෙස ගණන් ගැනේ. අදාළ නොවේ නම් N/A භාවිතා කරන්න. N/A අයිතම % ගණනයට ඇතුළත් නොවේ.',
-    st_todo:'කළ යුතුයි', st_ok:'කුසලතා ඇත', st_no:'තවම නැත', st_na:'N/A', btn_pass:'Pass', btn_fail:'Fail', btn_allpass:'සියල්ල Pass', btn_na:'N/A',
+    areas:'අයිතම', assess_help:'සෑම නිර්ණායකයක්ම Pass හෝ Fail ලෙස සලකුණු කරන්න, නැතහොත් සියල්ල Pass / සියල්ල Fail භාවිතා කරන්න. නිර්ණායක 5ම සමත් වුවහොත් පමණක් ක්ෂේත්‍රය හෝ ක්‍රියාකාරකම කුසලතා ලෙස ගණන් ගැනේ.',
+    st_todo:'කළ යුතුයි', st_ok:'කුසලතා ඇත', st_no:'තවම නැත', st_na:'N/A', btn_pass:'Pass', btn_fail:'Fail', btn_allpass:'සියල්ල Pass', btn_allfail:'සියල්ල Fail',
     lbl_remarks:'සටහන් (අත්‍යවශ්‍ය නොවේ)', btn_review:'ප්‍රතිඵලය බලන්න', btn_back_details:'විස්තර වෙත ආපසු',
     rv_title:'සුරැකීමට පෙර පරීක්ෂා කරන්න', rv_desc:'ප්‍රතිඵලය පරීක්ෂා කරන්න. සුරැකූ පසු එය කුසලතා සටහනට එක් වේ.',
     skilled_of:'{a} න් {s} ක් කුසලතා', m_employee:'සේවකයා', m_model:'මාදිලිය', m_assessor:'ඇගයීම්කරු', m_na:'අදාළ නොවන ක්ෂේත්‍ර', none:'නැත',
@@ -896,7 +895,7 @@ function renderAreas(){
       `<div class="area-body">${critHtml}`+
         `<div class="area-tools">`+
           `<button onclick="allPass(${a})">${esc(t('btn_allpass'))}</button>`+
-          `<button class="${marks[a].na?'on':''}" onclick="toggleNA(${a})">${esc(t('btn_na'))}</button>`+
+          `<button onclick="allFail(${a})">${esc(t('btn_allfail'))}</button>`+
         `</div></div>`;
     wrap.appendChild(card);
   });
@@ -945,7 +944,7 @@ function afterChange(a){
 }
 function setCrit(a, i, v){ marks[a].crit[i] = v; afterChange(a); }
 function allPass(a){ marks[a].na = false; marks[a].crit = marks[a].crit.map(()=>1); afterChange(a); }
-function toggleNA(a){ marks[a].na = !marks[a].na; afterChange(a); }
+function allFail(a){ marks[a].na = false; marks[a].crit = marks[a].crit.map(()=>0); afterChange(a); }
 
 /* =========================================================
    STEP 3: REVIEW
@@ -983,7 +982,6 @@ function goReview(){
   document.getElementById('rv-id').textContent = emp.idNumber + ' (' + (emp.empType==='company'?'Company':'Manpower') + ')';
   document.getElementById('rv-model').textContent = model;
   document.getElementById('rv-assessor').textContent = assessor.name;
-  document.getElementById('rv-na').textContent = s.na.length ? s.na.length+' ('+s.na.join(', ')+')' : t('none');
   document.getElementById('rv-fails').innerHTML = s.fails.length
     ? s.fails.map(f=>`<li><b>${f.no}. ${esc(f.name)}</b><span>${esc(t('failed'))}: ${esc(f.failed.join(', '))}</span></li>`).join('')
     : `<li class="muted">${esc(t('all_skilled'))}</li>`;
