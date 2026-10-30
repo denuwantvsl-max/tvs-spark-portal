@@ -523,7 +523,7 @@ const T = {
     lv_adv:'Advanced', lv_int:'Intermediate', lv_bas:'Basic', lv_nq:'Not Qualified'
   },
   si: {
-    plant:'TVS Lanka හොරණ එකලස් කිරීමේ පිරියත — කුසලතා ඇගයීම, SKD / CKD / 3W (ඇගයීම්කරුවන්ට පමණි)',
+    plant:'TVS Lanka හොරණ එකලස් කිරීමේ සංකීර්ණය — කුසලතා ඇගයීම, SKD / CKD / 3W (ඇගයීම්කරුවන්ට පමණි)',
     link_matrix:'සේවක කුසලතා සටහන', link_home:'මුල් පිටුව', compact:'කුසලතා ඇගයීම',
     det_title:'ඇගයීමේ විස්තර', det_desc:'අධීක්ෂකවරුන් සහ ඇගයීම්කරුවන් සඳහා. සේවකයා වැඩ කරන අයුරු නිරීක්ෂණය කර, වරකට එක් මාදිලියක් සඳහා ඇගයීම කරන්න.',
     h_assessor:'ඇගයීම්කරු', lbl_assessor:'ඔබගේ නම', lbl_pin:'ඇගයීම්කරු PIN අංකය',
@@ -1050,7 +1050,7 @@ function sinhalaMessage(res){
   const d = res.data, s = res.summary;
   const lk = levelKey(d.modelPct), lf = levelKey(d.finalPct || 0);
   let msg = `ආයුබෝවන් ${res.emp.name},\n\n`+
-    `TVS Lanka හොරණ එකලස් කිරීමේ පිරියතේ ${d.line || "SKD"} එකලස් කිරීමේ කුසලතා ඇගයීමේ ප්‍රතිඵලය:\n\n`+
+    `TVS Lanka හොරණ එකලස් කිරීමේ සංකීර්ණයේ ${d.line || "SKD"} එකලස් කිරීමේ කුසලතා ඇගයීමේ ප්‍රතිඵලය:\n\n`+
     `මාදිලිය: ${res.model}${res.stations.length ? ' (වැඩපොළ: '+res.stations.join(', ')+')' : ''}\n`+
     `මෙම ඇගයීම: ${d.sittingPct}% (${d.applicable} න් ${d.skilled} ක් සමත්)\n`+
     `මාදිලියේ ලකුණු: ${d.modelPct}%${d.stationsTotal ? ' (වැඩපොළවල් '+d.stationsTotal+' න් '+d.stationsDone+')' : ''} – ${LEVEL_SI[lk]}\n`+
